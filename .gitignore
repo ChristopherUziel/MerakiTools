@@ -1,0 +1,3 @@
+.venv/
+config/settings.json
+__pycache__/
