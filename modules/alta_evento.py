@@ -385,8 +385,19 @@ def alta_evento():
             network_destino_id=network["id"],
         )
 
+    except requests.HTTPError as error:
+        if error.response is not None and error.response.status_code == 400:
+            print(
+                "\nMeraki rechazó la consulta del inventario. "
+                "Verifica que los seriales sean reales y estén escritos correctamente.\n"
+            )
+        else:
+            print(f"\nNo fue posible consultar el inventario: {error}\n")
+
+        return
+
     except requests.RequestException as error:
-        print(f"\nNo fue posible consultar el inventario: {error}\n")
+        print(f"\nNo fue posible comunicarse con Meraki: {error}\n")
         return
 
     print("\n=== VALIDACIÓN DE EQUIPOS ===\n")
@@ -412,7 +423,6 @@ def alta_evento():
     print(f"\nEquipos válidos: {len(equipos_validos)}")
     print(f"No encontrados: {len(seriales_no_encontrados)}")
 
-
     if not equipos_validos:
         print("\nNo hay equipos válidos para procesar.\n")
         return
@@ -422,9 +432,7 @@ def alta_evento():
         "desde otras Networks y cambiar sus nombres y tags."
     )
 
-    confirmacion = input(
-        "\n¿Deseas continuar con el alta? (S/N):\n> "
-    ).strip().upper()
+    confirmacion = input("\n¿Deseas continuar con el alta? (S/N):\n> ").strip().upper()
 
     if confirmacion != "S":
         print("\nOperación cancelada. No se realizaron cambios.\n")
