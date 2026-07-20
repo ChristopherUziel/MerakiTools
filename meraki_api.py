@@ -1,4 +1,5 @@
 import requests
+import time
 
 from config import obtener_api_key
 
@@ -73,6 +74,123 @@ def obtener_dispositivos_inventario(
     respuesta.raise_for_status()
 
     return respuesta.json()
+
+
+def retirar_dispositivo_network(
+    network_id: str,
+    serial: str,
+) -> None:
+    """
+    Retira un dispositivo de una Network y lo deja disponible
+    en el inventario de la organización.
+    """
+
+    respuesta = requests.post(
+        f"{BASE_URL}/networks/{network_id}/devices/remove",
+        headers=crear_headers(),
+        json={
+            "serial": serial,
+        },
+        timeout=30,
+    )
+
+    respuesta.raise_for_status()
+
+
+def agregar_dispositivos_network(
+    network_id: str,
+    seriales: list[str],
+) -> dict:
+    """
+    Agrega varios dispositivos disponibles a una Network.
+
+    addAtomically=True indica que Meraki debe agregar todos
+    los equipos o no agregar ninguno.
+    """
+
+    respuesta = requests.post(
+        f"{BASE_URL}/networks/{network_id}/devices/claim",
+        headers=crear_headers(),
+        params={
+            "addAtomically": "true",
+        },
+        json={
+            "serials": seriales,
+        },
+        timeout=60,
+    )
+
+    respuesta.raise_for_status()
+
+    return respuesta.json()
+
+
+def obtener_dispositivo(serial: str) -> dict:
+    """
+    Consulta un dispositivo individual mediante su serial.
+    """
+
+    respuesta = requests.get(
+        f"{BASE_URL}/devices/{serial}",
+        headers=crear_headers(),
+        timeout=30,
+    )
+
+    respuesta.raise_for_status()
+
+    return respuesta.json()
+
+
+def actualizar_dispositivo(
+    serial: str,
+    nombre: str,
+    tags: list[str],
+) -> dict:
+    """
+    Actualiza el nombre y los tags de un dispositivo.
+    """
+
+    respuesta = requests.put(
+        f"{BASE_URL}/devices/{serial}",
+        headers=crear_headers(),
+        json={
+            "name": nombre,
+            "tags": tags,
+        },
+        timeout=30,
+    )
+
+    respuesta.raise_for_status()
+
+    return respuesta.json()
+
+
+def esperar_dispositivo_en_network(
+    serial: str,
+    network_id: str,
+    intentos: int = 12,
+    espera_segundos: int = 10,
+) -> bool:
+    """
+    Espera a que un dispositivo recién agregado aparezca
+    dentro de la Network destino.
+
+    Por defecto espera hasta dos minutos.
+    """
+
+    for _ in range(intentos):
+        try:
+            dispositivo = obtener_dispositivo(serial)
+
+            if dispositivo.get("networkId") == network_id:
+                return True
+
+        except requests.RequestException:
+            pass
+
+        time.sleep(espera_segundos)
+
+    return False
 
 
 def inicializar():
