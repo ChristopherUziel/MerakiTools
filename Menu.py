@@ -6,7 +6,7 @@ from modules.buscar import buscar
 
 def mostrar_menu():
     print("\n" + "=" * 40)
-    print("      MERAKI TOLLS")
+    print("      MERAKI TOOLS")
     print("=" * 40)
     print("1. Alta de Equipos")
     print("2. Desmontaje")

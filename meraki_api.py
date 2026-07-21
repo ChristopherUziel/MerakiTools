@@ -164,6 +164,29 @@ def actualizar_dispositivo(
 
     return respuesta.json()
 
+def actualizar_nombre_dispositivo(
+    serial: str,
+    nombre: str,
+) -> dict:
+    """
+    Funcion especifica para modulo desmontaje.
+    Actualiza únicamente el nombre de un dispositivo,
+    sin modificar sus tags ni otras propiedades.
+    """
+
+    respuesta = requests.put(
+        f"{BASE_URL}/devices/{serial}",
+        headers=crear_headers(),
+        json={
+            "name": nombre,
+        },
+        timeout=30,
+    )
+
+    respuesta.raise_for_status()
+
+    return respuesta.json()
+
 
 def esperar_dispositivo_en_network(
     serial: str,
