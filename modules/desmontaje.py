@@ -14,15 +14,9 @@ def normalizar_serial_desmontaje(serial: str) -> str:
     serial_limpio = serial.strip().upper().replace("-", "")
 
     if len(serial_limpio) != 12:
-        raise ValueError(
-            f"El serial '{serial}' no tiene 12 caracteres."
-        )
+        raise ValueError(f"El serial '{serial}' no tiene 12 caracteres.")
 
-    return (
-        f"{serial_limpio[:4]}-"
-        f"{serial_limpio[4:8]}-"
-        f"{serial_limpio[8:12]}"
-    )
+    return f"{serial_limpio[:4]}-" f"{serial_limpio[4:8]}-" f"{serial_limpio[8:12]}"
 
 
 def convertir_seriales_desmontaje(
@@ -59,9 +53,7 @@ def seleccionar_organizacion_desmontaje() -> dict:
     organizaciones = obtener_organizaciones()
 
     if not organizaciones:
-        raise ValueError(
-            "No se encontraron organizaciones disponibles."
-        )
+        raise ValueError("No se encontraron organizaciones disponibles.")
 
     print("\nOrganizaciones disponibles:\n")
 
@@ -71,9 +63,7 @@ def seleccionar_organizacion_desmontaje() -> dict:
     ):
         print(f"{indice}. {organizacion['name']}")
 
-    opcion = input(
-        "\nSelecciona una organización:\n> "
-    ).strip()
+    opcion = input("\nSelecciona una organización:\n> ").strip()
 
     if not opcion.isdigit():
         raise ValueError("Debes ingresar un número.")
@@ -81,9 +71,7 @@ def seleccionar_organizacion_desmontaje() -> dict:
     indice = int(opcion) - 1
 
     if indice < 0 or indice >= len(organizaciones):
-        raise ValueError(
-            "La organización seleccionada no existe."
-        )
+        raise ValueError("La organización seleccionada no existe.")
 
     return organizaciones[indice]
 
@@ -98,22 +86,16 @@ def seleccionar_network_desmontaje(
     networks = obtener_networks(organization_id)
 
     if not networks:
-        raise ValueError(
-            "No se encontraron Networks disponibles."
-        )
+        raise ValueError("No se encontraron Networks disponibles.")
 
-    networks.sort(
-        key=lambda network: network["name"].lower()
-    )
+    networks.sort(key=lambda network: network["name"].lower())
 
     print("\nNetworks disponibles:\n")
 
     for indice, network in enumerate(networks, start=1):
         print(f"{indice}. {network['name']}")
 
-    opcion = input(
-        "\nSelecciona la Network del evento:\n> "
-    ).strip()
+    opcion = input("\nSelecciona la Network del evento:\n> ").strip()
 
     if not opcion.isdigit():
         raise ValueError("Debes ingresar un número.")
@@ -121,9 +103,7 @@ def seleccionar_network_desmontaje(
     indice = int(opcion) - 1
 
     if indice < 0 or indice >= len(networks):
-        raise ValueError(
-            "La Network seleccionada no existe."
-        )
+        raise ValueError("La Network seleccionada no existe.")
 
     return networks[indice]
 
@@ -167,8 +147,7 @@ def clasificar_equipos_desmontaje(
     )
 
     dispositivos_por_serial = {
-        dispositivo["serial"]: dispositivo
-        for dispositivo in dispositivos
+        dispositivo["serial"]: dispositivo for dispositivo in dispositivos
     }
 
     clasificacion = {
@@ -192,23 +171,17 @@ def clasificar_equipos_desmontaje(
                 "Desconocido",
             ),
             "nombre_actual": dispositivo.get("name"),
-            "network_actual_id": dispositivo.get(
-                "networkId"
-            ),
+            "network_actual_id": dispositivo.get("networkId"),
         }
 
         if equipo["network_actual_id"] != network_evento_id:
             clasificacion["otra_network"].append(equipo)
 
-        elif nombre_esta_recuperado(
-            equipo["nombre_actual"]
-        ):
+        elif nombre_esta_recuperado(equipo["nombre_actual"]):
             clasificacion["ya_recuperados"].append(equipo)
 
         else:
-            equipo["nombre_nuevo"] = crear_nombre_recuperado(
-                equipo["nombre_actual"]
-            )
+            equipo["nombre_nuevo"] = crear_nombre_recuperado(equipo["nombre_actual"])
 
             clasificacion["pendientes"].append(equipo)
 
@@ -245,10 +218,7 @@ def mostrar_resumen_desmontaje(
         print("\nSeriales repetidos durante esta captura:\n")
 
         for serial in seriales_duplicados:
-            print(
-                f"- {serial} | "
-                "Ya había sido ingresado en esta misma lista."
-            )
+            print(f"- {serial} | " "Ya había sido ingresado en esta misma lista.")
 
     if ya_recuperados:
         print("\nEquipos que ya estaban marcados como RECUPERADA:\n")
@@ -278,19 +248,10 @@ def mostrar_resumen_desmontaje(
 
     print("\nResumen:")
     print(f"- Pendientes: {len(pendientes)}")
-    print(
-        f"- Ya recuperados: {len(ya_recuperados)}"
-    )
-    print(
-        f"- Duplicados en captura: "
-        f"{len(seriales_duplicados)}"
-    )
-    print(
-        f"- En otra Network: {len(otra_network)}"
-    )
-    print(
-        f"- No encontrados: {len(no_encontrados)}"
-    )
+    print(f"- Ya recuperados: {len(ya_recuperados)}")
+    print(f"- Duplicados en captura: " f"{len(seriales_duplicados)}")
+    print(f"- En otra Network: {len(otra_network)}")
+    print(f"- No encontrados: {len(no_encontrados)}")
 
 
 def procesar_desmontaje(
@@ -324,34 +285,23 @@ def procesar_desmontaje(
             equipo["resultado"] = "Correcto"
             correctos += 1
 
-            print(
-                f"✓ {serial} | {nombre_nuevo}"
-            )
+            print(f"✓ {serial} | {nombre_nuevo}")
 
         except requests.RequestException as error:
             equipo["resultado"] = "Error"
             equipo["error"] = str(error)
 
-            print(
-                f"✗ {serial} | No se pudo actualizar: "
-                f"{error}"
-            )
+            print(f"✗ {serial} | No se pudo actualizar: " f"{error}")
 
     print("\n=== RESULTADO FINAL ===\n")
 
     for equipo in equipos:
-        print(
-            f"{equipo['serial']} | "
-            f"{equipo.get('resultado', 'Sin procesar')}"
-        )
+        print(f"{equipo['serial']} | " f"{equipo.get('resultado', 'Sin procesar')}")
 
         if equipo.get("error"):
             print(f"  Error: {equipo['error']}")
 
-    print(
-        f"\nEquipos marcados correctamente: "
-        f"{correctos}/{len(equipos)}\n"
-    )
+    print(f"\nEquipos marcados correctamente: " f"{correctos}/{len(equipos)}\n")
 
 
 def desmontaje():
@@ -360,14 +310,10 @@ def desmontaje():
     try:
         organizacion = seleccionar_organizacion_desmontaje()
 
-        network = seleccionar_network_desmontaje(
-            organizacion["id"]
-        )
+        network = seleccionar_network_desmontaje(organizacion["id"])
 
     except requests.RequestException as error:
-        print(
-            f"\nNo fue posible consultar Meraki: {error}\n"
-        )
+        print(f"\nNo fue posible consultar Meraki: {error}\n")
         return
 
     except ValueError as error:
@@ -378,25 +324,18 @@ def desmontaje():
     print(f"Network del evento: {network['name']}\n")
 
     entrada_seriales = input(
-        "Ingresa los seriales recuperados "
-        "separados por comas:\n> "
+        "Ingresa los seriales recuperados " "separados por comas:\n> "
     )
 
     try:
-        seriales, seriales_duplicados = (
-            convertir_seriales_desmontaje(
-                entrada_seriales
-            )
-        )
+        seriales, seriales_duplicados = convertir_seriales_desmontaje(entrada_seriales)
 
     except ValueError as error:
         print(f"\nError: {error}\n")
         return
 
     if not seriales:
-        print(
-            "\nNo se ingresaron seriales válidos.\n"
-        )
+        print("\nNo se ingresaron seriales válidos.\n")
         return
 
     try:
@@ -407,28 +346,19 @@ def desmontaje():
         )
 
     except requests.HTTPError as error:
-        if (
-            error.response is not None
-            and error.response.status_code == 400
-        ):
+        if error.response is not None and error.response.status_code == 400:
             print(
                 "\nMeraki rechazó uno o más seriales. "
                 "Verifica que sean reales y estén "
                 "escritos correctamente.\n"
             )
         else:
-            print(
-                "\nNo fue posible consultar los equipos: "
-                f"{error}\n"
-            )
+            print("\nNo fue posible consultar los equipos: " f"{error}\n")
 
         return
 
     except requests.RequestException as error:
-        print(
-            "\nNo fue posible comunicarse con Meraki: "
-            f"{error}\n"
-        )
+        print("\nNo fue posible comunicarse con Meraki: " f"{error}\n")
         return
 
     mostrar_resumen_desmontaje(
@@ -439,26 +369,17 @@ def desmontaje():
     pendientes = clasificacion["pendientes"]
 
     if not pendientes:
-        print(
-            "\nNo existen equipos pendientes por marcar.\n"
-        )
+        print("\nNo existen equipos pendientes por marcar.\n")
         return
 
-    print(
-        "\nSolo se modificarán los equipos mostrados "
-        "como pendientes."
+    print("\nSolo se modificarán los equipos mostrados " "como pendientes.")
+
+    confirmacion = (
+        input("\n¿Deseas marcarlos como RECUPERADA? " "(S/N):\n> ").strip().upper()
     )
 
-    confirmacion = input(
-        "\n¿Deseas marcarlos como RECUPERADA? "
-        "(S/N):\n> "
-    ).strip().upper()
-
     if confirmacion != "S":
-        print(
-            "\nOperación cancelada. "
-            "No se realizaron cambios.\n"
-        )
+        print("\nOperación cancelada. " "No se realizaron cambios.\n")
         return
 
     procesar_desmontaje(pendientes)
