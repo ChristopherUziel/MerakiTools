@@ -110,7 +110,7 @@ def seleccionar_network_desmontaje(
 
 def nombre_esta_recuperado(nombre: str | None) -> bool:
     """
-    Indica si el nombre ya contiene la palabra RECUPERADA.
+    Indica si el nombre ya contiene la palabra RECUPERADO.
     """
 
     if not nombre:
@@ -118,17 +118,17 @@ def nombre_esta_recuperado(nombre: str | None) -> bool:
 
     palabras = nombre.upper().split()
 
-    return "RECUPERADA" in palabras
+    return "RECUPERADO" in palabras
 
 
 def crear_nombre_recuperado(nombre_actual: str | None) -> str:
     """
-    Añade RECUPERADA al nombre actual.
+    Añade RECUPERADO al nombre actual.
     """
 
     nombre_base = (nombre_actual or "SIN-NOMBRE").strip()
 
-    return f"{nombre_base} RECUPERADA"
+    return f"{nombre_base} RECUPERADO"
 
 
 def clasificar_equipos_desmontaje(
@@ -174,11 +174,12 @@ def clasificar_equipos_desmontaje(
             "network_actual_id": dispositivo.get("networkId"),
         }
 
-        if equipo["network_actual_id"] != network_evento_id:
-            clasificacion["otra_network"].append(equipo)
+        if nombre_esta_recuperado(equipo["nombre_actual"]):
+                    clasificacion["ya_recuperados"].append(equipo)
 
-        elif nombre_esta_recuperado(equipo["nombre_actual"]):
-            clasificacion["ya_recuperados"].append(equipo)
+        elif equipo["network_actual_id"] != network_evento_id:
+            equipo["nombre_nuevo"] = crear_nombre_recuperado(equipo["nombre_actual"])
+            clasificacion["otra_network"].append(equipo)
 
         else:
             equipo["nombre_nuevo"] = crear_nombre_recuperado(equipo["nombre_actual"])
@@ -221,7 +222,7 @@ def mostrar_resumen_desmontaje(
             print(f"- {serial} | " "Ya había sido ingresado en esta misma lista.")
 
     if ya_recuperados:
-        print("\nEquipos que ya estaban marcados como RECUPERADA:\n")
+        print("\nEquipos que ya estaban marcados como RECUPERADO:\n")
 
         for equipo in ya_recuperados:
             print(
@@ -258,7 +259,7 @@ def procesar_desmontaje(
     equipos: list[dict],
 ) -> None:
     """
-    Añade RECUPERADA al nombre de los equipos pendientes.
+    Añade RECUPERADO al nombre de los equipos pendientes.
     """
 
     if not cambios_habilitados():
@@ -367,19 +368,37 @@ def desmontaje():
     )
 
     pendientes = clasificacion["pendientes"]
+    otra_network = clasificacion["otra_network"]
 
-    if not pendientes:
+    if not pendientes and not otra_network:
         print("\nNo existen equipos pendientes por marcar.\n")
         return
 
-    print("\nSolo se modificarán los equipos mostrados " "como pendientes.")
+    if not pendientes:
+        print("\nNo existen equipos pendientes en esta Network por marcar.\n")
+    else:
+        print("\nSolo se modificarán los equipos mostrados " "como pendientes")
 
-    confirmacion = (
-        input("\n¿Deseas marcarlos como RECUPERADA? " "(S/N):\n> ").strip().upper()
-    )
+        confirmacion = (
+            input("\n¿Deseas marcar los pendientes como RECUPERADO? " "(S/N):\n> ").strip().upper()
+        )
 
-    if confirmacion != "S":
-        print("\nOperación cancelada. " "No se realizaron cambios.\n")
-        return
+        if confirmacion != "S":
+            print("\nOperación cancelada. " "No se realizaron cambios en los pendientes.\n")
+        else: 
+            procesar_desmontaje(pendientes)
 
-    procesar_desmontaje(pendientes)
+    if not otra_network:
+        print("\nNo existen equipos pendientes de otra Network por marcar. \n")
+    else:
+        print("\nDeseas modificar los equipos mostrados " "en otra network?")
+    
+        confirmacion = (
+            input("\n¿Deseas marcarlos como RECUPERADO? " "(S/N):\n> ").strip().upper()
+        )
+    
+        if confirmacion != "S":
+            print("\nOperación cancelada. " "No se realizaron cambios.\n")
+            return
+    
+        procesar_desmontaje(otra_network)
