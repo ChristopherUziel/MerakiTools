@@ -2,6 +2,7 @@ from meraki_api import inicializar
 from modules.alta_evento import alta_evento
 from modules.desmontaje import desmontaje
 from modules.buscar import buscar
+from modules.reportes import reportes
 
 
 def mostrar_menu():
@@ -17,9 +18,9 @@ def mostrar_menu():
 
 
 def main():
-    
+
     inicializar()
-    
+
     while True:
         mostrar_menu()
 
@@ -35,7 +36,7 @@ def main():
             buscar()
 
         elif opcion == "4":
-            print("\n[Módulo en construcción]\n")
+            reportes()
 
         elif opcion == "5":
             print("\n¡Hasta luego!")

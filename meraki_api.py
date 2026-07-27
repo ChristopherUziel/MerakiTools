@@ -164,6 +164,7 @@ def actualizar_dispositivo(
 
     return respuesta.json()
 
+
 def actualizar_nombre_dispositivo(
     serial: str,
     nombre: str,
@@ -214,6 +215,43 @@ def esperar_dispositivo_en_network(
         time.sleep(espera_segundos)
 
     return False
+
+
+def obtener_dispositivos_network(network_id: str) -> list[dict]:
+    """
+    Obtiene todos los dispositivos asignados actualmente
+    a una Network
+    """
+
+    dispositivos = []
+
+    url = f"{BASE_URL}/networks/{network_id}/devices"
+
+    parametros = {
+        "perPage": 1000,
+    }
+
+    while url:
+        respuesta = requests.get(
+            url,
+            headers=crear_headers(),
+            params=parametros,
+            timeout=30,
+        )
+
+        respuesta.raise_for_status()
+
+        dispositivos.extend(respuesta.json())
+
+        siguiente_pagina = respuesta.links.get("next")
+
+        if siguiente_pagina:
+            url = siguiente_pagina["url"]
+            parametros = None
+        else:
+            url = None
+
+    return dispositivos
 
 
 def inicializar():
