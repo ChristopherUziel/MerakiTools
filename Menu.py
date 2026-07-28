@@ -3,6 +3,7 @@ from modules.alta_evento import alta_evento
 from modules.desmontaje import desmontaje
 from modules.buscar import buscar
 from modules.reportes import reportes
+from config import configurar_api_key_si_es_necesario
 
 
 def mostrar_menu():
@@ -18,6 +19,14 @@ def mostrar_menu():
 
 
 def main():
+
+    try:
+        configurar_api_key_si_es_necesario()
+
+    except ValueError as error:
+        print(f"\nError de configuración: {error}\n")
+        input("Presiona Enter para cerrar...")
+        return
 
     inicializar()
 

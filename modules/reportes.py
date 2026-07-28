@@ -2,6 +2,7 @@ import csv
 import os
 import re
 from datetime import datetime
+from config import CARPETA_BASE
 
 import requests
 
@@ -11,7 +12,7 @@ from meraki_api import (
     obtener_organizaciones,
 )
 
-CARPETA_REPORTES = "reportes"
+CARPETA_REPORTES = CARPETA_BASE / "reportes"
 
 
 def seleccionar_organizacion_reporte() -> dict:
