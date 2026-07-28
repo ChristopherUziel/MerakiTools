@@ -101,6 +101,8 @@ def configurar_api_key_si_es_necesario() -> None:
     print("No se encontró una API Key guardada " "para este usuario de Windows.")
 
     while True:
+        print("\nPara pegarla, usa clic derecho o Editar > Pegar. NO USAR CTRL + V")
+
         api_key = getpass("\nIngresa tu API Key de Meraki:\n> ").strip()
 
         if not api_key:
