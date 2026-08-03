@@ -21,6 +21,33 @@ def normalizar_serial_busqueda(serial: str) -> str:
     return f"{serial_limpio[:4]}-" f"{serial_limpio[4:8]}-" f"{serial_limpio[8:12]}"
 
 
+def convertir_seriales_busqueda(
+    texto_seriales: str,
+) -> tuple[list[str], list[str]]:
+    """
+    Convierte varios seriales separados por comas y devuelve los unicos y repetidos
+    """
+
+    seriales_unicos = []
+    seriales_duplicados = []
+
+    for serial in texto_seriales.split(","):
+        if not serial.strip():
+            continue
+
+        serial_normalizado = normalizar_serial_busqueda(serial)
+
+        if serial_normalizado in seriales_unicos:
+            if serial_normalizado not in seriales_duplicados:
+                seriales_duplicados.append(serial_normalizado)
+
+            continue
+
+        seriales_unicos.append(serial_normalizado)
+
+    return seriales_unicos, seriales_duplicados
+
+
 def seleccionar_organizacion_busqueda() -> dict:
     """
     Muestra las organizaciones disponibles y devuelve
@@ -231,6 +258,83 @@ def ejecutar_busqueda(
     )
 
 
+def ejecutar_busqueda_multiple(
+    organizacion: dict,
+    seriales: list[str],
+) -> None:
+    """
+    Busca varios equipos en una sola consulta
+    """
+
+    dispositivos = obtener_dispositivos_inventario(
+        organization_id=organizacion["id"],
+        seriales=seriales,
+    )
+
+    dispositivos_por_serial = {
+        dispositivo.get("serial"): dispositivo for dispositivo in dispositivos
+    }
+
+    networks = obtener_networks(organizacion["id"])
+
+    networks_por_id = {
+        network.get("id"): network.get("name", "Sin nombre") for network in networks
+    }
+
+    encontrados = 0
+    no_encontrados = []
+
+    for serial in seriales:
+        dispositivo_inventario = dispositivos_por_serial.get(serial)
+
+        if dispositivo_inventario is None:
+            no_encontrados.append(serial)
+            continue
+
+        encontrados += 1
+
+        network_id = dispositivo_inventario.get("networkId")
+
+        if network_id is None:
+            nombre_network = "Ninguna - disponible en inventario"
+        else:
+            nombre_network = networks_por_id.get(
+                network_id,
+                "Network no identificada",
+            )
+
+        dispositivo_detallado = None
+
+        if network_id is not None:
+            try:
+                dispositivo_detallado = obtener_dispositivo(serial)
+
+            except requests.RequestException:
+                dispositivo_detallado = None
+
+        mostrar_informacion_equipo(
+            dispositivo_inventario=dispositivo_inventario,
+            dispositivo_detallado=dispositivo_detallado,
+            nombre_network=nombre_network,
+        )
+
+    if no_encontrados:
+        print("\n=== EQUIPOS NO ENCONTRADOS ===\n")
+
+        for serial in no_encontrados:
+            print(f"- {serial}")
+
+        print(
+            "\nEs posible que estén en otra organización, "
+            "no hayan sido reclamados o que el serial sea incorrecto."
+        )
+
+    print("\n=== RESUMEN DE BÚSQUEDA ===\n")
+    print(f"Seriales consultados: {len(seriales)}")
+    print(f"Equipos encontrados:  {encontrados}")
+    print(f"No encontrados:       {len(no_encontrados)}")
+
+
 def buscar():
     print("\n=== BUSCAR EQUIPO ===\n")
 
@@ -246,14 +350,28 @@ def buscar():
         return
 
     while True:
-        entrada_serial = input("\nIngresa el serial completo del equipo:\n> ")
+        entrada_seriales = input(
+            "\nIngresa uno o varios seriales separados por comas:\n> "
+        )
 
         try:
-            serial = normalizar_serial_busqueda(entrada_serial)
+            seriales, seriales_duplicados = convertir_seriales_busqueda(
+                entrada_seriales
+            )
 
-            ejecutar_busqueda(
+            if not seriales:
+                print("\nNo se ingresaron seriales válidos.\n")
+                continue
+
+            if seriales_duplicados:
+                print("\nSeriales repetidos en la captura:\n")
+
+                for serial in seriales_duplicados:
+                    print(f"- {serial}")
+
+            ejecutar_busqueda_multiple(
                 organizacion=organizacion,
-                serial=serial,
+                seriales=seriales,
             )
 
         except ValueError as error:
