@@ -2,6 +2,8 @@ from config import cambios_habilitados
 
 import requests
 
+import re
+
 from meraki_api import (
     actualizar_dispositivo,
     agregar_dispositivos_network,
@@ -10,6 +12,7 @@ from meraki_api import (
     obtener_networks,
     obtener_organizaciones,
     retirar_dispositivo_network,
+    obtener_dispositivos_network,
 )
 
 
@@ -47,10 +50,44 @@ def convertir_seriales(texto_seriales: str) -> list[str]:
     return seriales
 
 
+def obtener_siguiente_numero_nombre(
+    network_id: str,
+    nombre_base: str,
+) -> int:
+    """
+    Consulta los nombres actuales de la Network y obtiene
+    el siguiente número disponible para el nombre base, su consecutivo.
+    """
+
+    dispositivos = obtener_dispositivos_network(network_id)
+
+    numero_mayor = 0
+
+    patron = re.compile(
+        rf"^{re.escape(nombre_base)}-(\d+)$",
+        re.IGNORECASE,
+    )
+
+    for dispositivo in dispositivos:
+        nombre_actual = dispositivo.get("name")
+
+        if not nombre_actual:
+            continue
+
+        coincidencia = patron.match(nombre_actual.strip())
+
+        if coincidencia:
+            numero = int(coincidencia.group(1))
+            numero_mayor = max(numero_mayor, numero)
+
+    return numero_mayor + 1
+
+
 def crear_lista_equipos(
     seriales: list[str],
     nombre_base: str,
     tags: list[str],
+    numero_inicial: int = 1,
 ) -> list[dict]:
     """
     Construye la información que posteriormente se enviará a Meraki.
@@ -58,7 +95,10 @@ def crear_lista_equipos(
 
     equipos = []
 
-    for numero, serial in enumerate(seriales, start=1):
+    for numero, serial in enumerate(
+        seriales,
+        start=numero_inicial,
+    ):
         equipo = {
             "serial": serial,
             "nombre": f"{nombre_base}-{numero:02d}",
@@ -372,10 +412,25 @@ def alta_evento():
 
     tags = [tag.strip() for tag in entrada_tags.split(",") if tag.strip()]
 
+    try:
+        numero_inicial = obtener_siguiente_numero_nombre(
+            network_id=network["id"],
+            nombre_base=nombre_base,
+        )
+
+    except requests.RequestException as error:
+        print(
+            "\nNo fue posible revisar la numeración actual "
+            f"de la Network: {error}\n"
+        )
+        return
+
+
     equipos = crear_lista_equipos(
         seriales=seriales,
         nombre_base=nombre_base,
         tags=tags,
+        numero_inicial=numero_inicial,
     )
 
     try:

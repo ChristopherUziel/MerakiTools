@@ -1,7 +1,7 @@
 from meraki_api import inicializar
 from modules.alta_evento import alta_evento
 from modules.desmontaje import desmontaje
-from modules.buscar import buscar
+from modules.buscar import buscar, buscar_todas_organizaciones
 from modules.reportes import reportes
 from config import configurar_api_key_si_es_necesario
 
@@ -12,9 +12,10 @@ def mostrar_menu():
     print("=" * 40)
     print("1. Alta de Equipos")
     print("2. Desmontaje")
-    print("3. Buscar Equipo")
-    print("4. Reportes")
-    print("5. Salir")
+    print("3. Buscar Equipo en una Organización")
+    print("4. Buscar Equipo en todas las Organizaciones")
+    print("5. Reportes")
+    print("6. Salir")
     print("=" * 40)
 
 
@@ -45,9 +46,12 @@ def main():
             buscar()
 
         elif opcion == "4":
-            reportes()
+            buscar_todas_organizaciones()
 
         elif opcion == "5":
+            reportes()
+
+        elif opcion == "6":
             print("\n¡Hasta luego!")
             break
 

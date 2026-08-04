@@ -335,6 +335,129 @@ def ejecutar_busqueda_multiple(
     print(f"No encontrados:       {len(no_encontrados)}")
 
 
+def ejecutar_busqueda_global(
+    seriales: list[str],
+) -> None:
+    """
+    Busca uno o varios equipos en todas las
+    organizaciones que tenga acceso el usuario.
+    """
+
+    organizaciones = obtener_organizaciones()
+
+    if not organizaciones:
+        raise ValueError("No se encontraron organizaciones disponibles.")
+
+    resultados = {}
+    organizaciones_con_error = []
+
+    print("\nBuscando equipos en todas las " "organizaciones accesibles...\n")
+
+    for organizacion in organizaciones:
+        seriales_pendientes = [
+            serial for serial in seriales if serial not in resultados
+        ]
+
+        if not seriales_pendientes:
+            break
+
+        try:
+            dispositivos = obtener_dispositivos_inventario(
+                organization_id=organizacion["id"],
+                seriales=seriales_pendientes,
+            )
+
+        except requests.RequestException as error:
+            organizaciones_con_error.append(
+                {
+                    "nombre": organizacion["name"],
+                    "error": str(error),
+                }
+            )
+            continue
+
+        if not dispositivos:
+            continue
+
+        networks = obtener_networks(organizacion["id"])
+
+        networks_por_id = {
+            network.get("id"): network.get(
+                "name",
+                "Sin nombre",
+            )
+            for network in networks
+        }
+
+        for dispositivo in dispositivos:
+            serial = dispositivo.get("serial")
+
+            if not serial:
+                continue
+
+            network_id = dispositivo.get("networkId")
+
+            if network_id is None:
+                nombre_network = "Ninguna - disponible en inventario"
+            else:
+                nombre_network = networks_por_id.get(
+                    network_id,
+                    "Network no identificada",
+                )
+
+            resultados[serial] = {
+                "organizacion": organizacion,
+                "dispositivo": dispositivo,
+                "nombre_network": nombre_network,
+            }
+
+    for serial in seriales:
+        resultado = resultados.get(serial)
+
+        if resultado is None:
+            continue
+
+        dispositivo_inventario = resultado["dispositivo"]
+
+        dispositivo_detallado = None
+
+        if dispositivo_inventario.get("networkId"):
+            try:
+                dispositivo_detallado = obtener_dispositivo(serial)
+
+            except requests.RequestException:
+                dispositivo_detallado = None
+
+        print(f"\nOrganización: " f"{resultado['organizacion']['name']}")
+
+        mostrar_informacion_equipo(
+            dispositivo_inventario=dispositivo_inventario,
+            dispositivo_detallado=dispositivo_detallado,
+            nombre_network=resultado["nombre_network"],
+        )
+
+    no_encontrados = [serial for serial in seriales if serial not in resultados]
+
+    if no_encontrados:
+        print("\n=== EQUIPOS NO ENCONTRADOS ===\n")
+
+        for serial in no_encontrados:
+            print(f"- {serial}")
+
+        print("\nNo fueron encontrados en ninguna " "organización accesible.")
+
+    if organizaciones_con_error:
+        print("\n=== ORGANIZACIONES NO CONSULTADAS ===\n")
+
+        for organizacion in organizaciones_con_error:
+            print(f"- {organizacion['nombre']}: " f"{organizacion['error']}")
+
+    print("\n=== RESUMEN GLOBAL ===\n")
+    print(f"Seriales consultados: {len(seriales)}")
+    print(f"Equipos encontrados:  {len(resultados)}")
+    print(f"No encontrados:       {len(no_encontrados)}")
+
+
 def buscar():
     print("\n=== BUSCAR EQUIPO ===\n")
 
@@ -394,3 +517,53 @@ def buscar():
         if continuar != "S":
             print("\nRegresando al menú principal...\n")
             break
+
+
+def buscar_todas_organizaciones():
+    """
+    Permite buscar uno o varios equipos en todas
+    las organizaciones que se tengan acceso
+    """
+
+    print("\n=== BUSCAR EQUIPO EN TODAS " "LAS ORGANIZACIONES ===\n")
+
+    while True:
+        entrada_seriales = input(
+            "\nIngresa uno o varios seriales " "separados por comas:\n> "
+        )
+
+        try:
+            seriales, seriales_duplicados = convertir_seriales_busqueda(
+                entrada_seriales
+            )
+
+            if not seriales:
+                print("\nNo se ingresaron seriales " "válidos.\n")
+                continue
+
+            if seriales_duplicados:
+                print("\nSeriales repetidos " "en la captura:\n")
+
+                for serial in seriales_duplicados:
+                    print(f"- {serial}")
+
+            ejecutar_busqueda_global(seriales)
+
+        except ValueError as error:
+            print(f"\nError: {error}\n")
+
+        except requests.HTTPError as error:
+            print("\nMeraki rechazó la consulta: " f"{error}\n")
+
+        except requests.RequestException as error:
+            print("\nNo fue posible comunicarse " f"con Meraki: {error}\n")
+
+        continuar = (
+            input("\n¿Deseas realizar otra búsqueda global? " "(S/N):\n> ")
+            .strip()
+            .upper()
+        )
+
+        if continuar != "S":
+            print("\nRegresando al menú principal...\n")
+            return
