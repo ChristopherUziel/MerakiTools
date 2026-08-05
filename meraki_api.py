@@ -76,6 +76,52 @@ def obtener_dispositivos_inventario(
     return respuesta.json()
 
 
+def liberar_dispositivos_organizacion(
+    organization_id: str,
+    seriales: list[str],
+) -> dict:
+    """
+    Libera equipos del inventario de una organizacion.
+
+    Antes de llamarla, primero se tienen que retirar de su network actual
+    """
+
+    respuesta = requests.post(
+        (f"{BASE_URL}/organizations/" f"{organization_id}/inventory/release"),
+        headers=crear_headers(),
+        json={
+            "serials": seriales,
+        },
+        timeout=60,
+    )
+
+    respuesta.raise_for_status()
+
+    return respuesta.json()
+
+
+def reclamar_dispositivos_organizacion(
+    organization_id: str,
+    seriales: list[str],
+) -> dict:
+    """
+    Reclama dispositivos dentre del inventario de la organizacion destino
+    """
+
+    respuesta = requests.post(
+        (f"{BASE_URL}/organizations/" f"{organization_id}/inventory/claim"),
+        headers=crear_headers(),
+        json={
+            "serials": seriales,
+        },
+        timeout=60,
+    )
+
+    respuesta.raise_for_status()
+
+    return respuesta.json()
+
+
 def retirar_dispositivo_network(
     network_id: str,
     serial: str,

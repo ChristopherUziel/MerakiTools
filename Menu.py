@@ -1,21 +1,26 @@
 from meraki_api import inicializar
 from modules.alta_evento import alta_evento
+from modules.alta_entre_organizaciones import (
+    alta_entre_organizaciones,
+)
 from modules.desmontaje import desmontaje
 from modules.buscar import buscar, buscar_todas_organizaciones
 from modules.reportes import reportes
 from config import configurar_api_key_si_es_necesario
 
 
+
 def mostrar_menu():
     print("\n" + "=" * 40)
     print("      MERAKI TOOLS")
     print("=" * 40)
-    print("1. Alta de Equipos")
-    print("2. Desmontaje")
-    print("3. Buscar Equipo en una Organización")
-    print("4. Buscar Equipo en todas las Organizaciones")
-    print("5. Reportes")
-    print("6. Salir")
+    print("1. Alta de Equipos en la misma Organización")
+    print("2. Alta masiva entre Organizaciones")
+    print("3. Desmontaje")
+    print("4. Buscar Equipo en una Organización")
+    print("5. Buscar Equipo en todas las Organizaciones")
+    print("6. Reportes")
+    print("7. Salir")
     print("=" * 40)
 
 
@@ -40,18 +45,21 @@ def main():
             alta_evento()
 
         elif opcion == "2":
-            desmontaje()
+            alta_entre_organizaciones()
 
         elif opcion == "3":
-            buscar()
+            desmontaje()
 
         elif opcion == "4":
-            buscar_todas_organizaciones()
+            buscar()
 
         elif opcion == "5":
-            reportes()
+            buscar_todas_organizaciones()
 
         elif opcion == "6":
+            reportes()
+
+        elif opcion == "7":
             print("\n¡Hasta luego!")
             break
 

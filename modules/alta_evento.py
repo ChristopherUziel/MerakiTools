@@ -121,7 +121,7 @@ def seleccionar_organizacion() -> dict:
     for indice, organizacion in enumerate(organizaciones, start=1):
         print(f"{indice}. {organizacion['name']}")
 
-    opcion = input("\nSelecciona una organización:\n> ").strip()
+    opcion = input("\nSelecciona una organización de destino:\n> ").strip()
 
     if not opcion.isdigit():
         raise ValueError("Debes ingresar un número.")
@@ -147,7 +147,7 @@ def seleccionar_network(organization_id: str) -> dict:
     for indice, network in enumerate(networks, start=1):
         print(f"{indice}. {network['name']}")
 
-    opcion = input("\nSelecciona la Network del evento:\n> ").strip()
+    opcion = input("\nSelecciona la Network de destino:\n> ").strip()
 
     if not opcion.isdigit():
         raise ValueError("Debes ingresar un número.")
