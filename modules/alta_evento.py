@@ -1,25 +1,23 @@
 from config import cambios_habilitados
-
 import requests
-
 import re
-
+import time
 from meraki_api import (
     actualizar_dispositivo,
+    actualizar_nombre_dispositivo,
     agregar_dispositivos_network,
     esperar_dispositivo_en_network,
     obtener_dispositivos_inventario,
+    obtener_dispositivos_network,
     obtener_networks,
     obtener_organizaciones,
     retirar_dispositivo_network,
-    obtener_dispositivos_network,
 )
 
 
 def normalizar_serial(serial: str) -> str:
     """
-    Convierte un serial Meraki al formato estándar:
-    XXXX-XXXX-XXXX
+    Normaliza el numero de serie al formato estandar
     """
 
     serial_limpio = serial.strip().upper().replace("-", "")
@@ -48,6 +46,49 @@ def convertir_seriales(texto_seriales: str) -> list[str]:
             seriales.append(serial_normalizado)
 
     return seriales
+
+
+def identificar_tipo_equipo(modelo: str) -> str:
+    """
+    Identifica el tipo de dispositivo por su modelo
+    """
+
+    modelo_mayusculas = (modelo or "").strip().upper()
+
+    if modelo_mayusculas.startswith("MR"):
+        return "MR"
+    if modelo_mayusculas.startswith("MS"):
+        return "MS"
+    if modelo_mayusculas.startswith("MX"):
+        return "MX"
+    return "OTRO"
+
+
+def combinar_tags(
+    tags_actuales: list[str],
+    tags_nuevos: list[str],
+) -> list[str]:
+    """
+    conserva los tags actuales y agrega los nuevos.
+    """
+
+    tags_combinados = []
+
+    for tag in tags_actuales + tags_nuevos:
+        tag_limpio = tag.strip()
+
+        if not tag_limpio:
+            continue
+
+        ya_existe = any(
+            tag_existente.lower() == tag_limpio.lower()
+            for tag_existente in tags_combinados
+        )
+
+        if not ya_existe:
+            tags_combinados.append(tag_limpio)
+
+    return tags_combinados
 
 
 def obtener_siguiente_numero_nombre(
@@ -168,7 +209,7 @@ def validar_equipos_inventario(
     """
     Complementa cada equipo con su modelo y ubicación actual.
 
-    Devuelve:
+    Devuelve
     - equipos válidos encontrados en el inventario
     - seriales que no aparecen en el inventario
     """
@@ -197,10 +238,42 @@ def validar_equipos_inventario(
         network_actual_id = dispositivo.get("networkId")
 
         equipo["modelo"] = dispositivo.get("model", "Desconocido")
+
+        equipo["tipo"] = identificar_tipo_equipo(equipo["modelo"])
+
         equipo["network_actual_id"] = network_actual_id
 
         equipo["nombre_actual"] = dispositivo.get("name")
+
         equipo["tags_actuales"] = dispositivo.get("tags", [])
+
+        if equipo["tipo"] == "MR":
+            equipo["procesable"] = True
+
+            equipo["tags_finales"] = combinar_tags(
+                tags_actuales=equipo["tags_actuales"],
+                tags_nuevos=equipo["tags"],
+            )
+
+        elif equipo["tipo"] == "MS":
+            equipo["procesable"] = True
+
+            # Los tags del MS se conservan
+            equipo["tags_finales"] = None
+
+        elif equipo["tipo"] == "MX":
+            equipo["procesable"] = False
+            equipo["tags_finales"] = None
+
+            equipo["motivo_bloqueo"] = (
+                "Equipo MX: requiere proceso especial " "o migración manual."
+            )
+
+        else:
+            equipo["procesable"] = False
+            equipo["tags_finales"] = None
+
+            equipo["motivo_bloqueo"] = "Tipo de equipo no permitido " "en este módulo."
 
         if network_actual_id is None:
             equipo["estado"] = "Disponible en inventario"
@@ -214,13 +287,224 @@ def validar_equipos_inventario(
     return equipos_validos, seriales_no_encontrados
 
 
+def actualizar_equipo_con_reintentos(
+    equipo: dict,
+    intentos: int = 10,
+    espera_segundos: int = 10,
+) -> bool:
+    """
+    Actualiza el nombre y, cuando sea MR, también los tags.
+
+    Si Meraki responde temporalmente con 404 después de mover
+    el dispositivo, espera y vuelve a intentarlo.
+
+    Devuelve:
+    True  -> actualización correcta.
+    False -> no fue posible actualizar.
+    """
+
+    serial = equipo["serial"]
+    ultimo_error = None
+
+    for intento in range(1, intentos + 1):
+        try:
+            if equipo["tipo"] == "MR":
+                actualizar_dispositivo(
+                    serial=serial,
+                    nombre=equipo["nombre"],
+                    tags=equipo["tags_finales"],
+                )
+
+            elif equipo["tipo"] == "MS":
+                actualizar_nombre_dispositivo(
+                    serial=serial,
+                    nombre=equipo["nombre"],
+                )
+
+            equipo["resultado"] = "Correcto"
+            equipo["ultima_etapa"] = "Nombre y configuración actualizados"
+            equipo["error"] = None
+
+            print(f"✓ {serial} | " f"Actualizado como {equipo['nombre']}")
+
+            return True
+
+        except requests.HTTPError as error:
+            ultimo_error = error
+
+            codigo_estado = (
+                error.response.status_code if error.response is not None else None
+            )
+
+            if codigo_estado == 404 and intento < intentos:
+                print(f"{serial} todavía no está disponible " "para actualizarse.")
+                print(
+                    f"Reintentando en {espera_segundos} segundos "
+                    f"({intento}/{intentos})...\n"
+                )
+
+                time.sleep(espera_segundos)
+                continue
+
+            break
+
+        except requests.RequestException as error:
+            ultimo_error = error
+
+            if intento < intentos:
+                print(
+                    f"No fue posible actualizar {serial}. "
+                    f"Reintentando en {espera_segundos} segundos "
+                    f"({intento}/{intentos})...\n"
+                )
+
+                time.sleep(espera_segundos)
+                continue
+
+            break
+
+    equipo["resultado"] = "Movimiento correcto, actualización pendiente"
+    equipo["ultima_etapa"] = "Equipo en destino; nombre o tags pendientes"
+    equipo["error"] = str(ultimo_error or "Error desconocido")
+
+    print(
+        f"⚠ {serial} | El equipo llegó a destino, "
+        "pero no fue posible actualizar su nombre o tags."
+    )
+
+    return False
+
+
+def error_es_incompatibilidad_nbar(
+    error: requests.HTTPError,
+) -> bool:
+    """
+    Revisa si Meraki rechazó el equipo porque la Network
+    utiliza NBAR y el modelo no es compatible.
+    """
+
+    if error.response is None:
+        return False
+
+    detalle = error.response.text.upper()
+
+    return "NBAR" in detalle
+
+
+def agregar_equipos_network_con_reintentos(
+    equipos: list[dict],
+    network_destino_id: str,
+    intentos: int = 10,
+    espera_segundos: int = 10,
+) -> list[dict]:
+    """
+    Agrega los equipos a la Network destino.
+
+    Si Meraki todavía está procesando el retiro de la
+    Network anterior, espera y vuelve a intentarlo.
+    """
+
+    if not equipos:
+        return []
+
+    seriales = [equipo["serial"] for equipo in equipos]
+
+    ultimo_error = None
+    detalle_meraki = ""
+
+    for intento in range(1, intentos + 1):
+        try:
+            agregar_dispositivos_network(
+                network_id=network_destino_id,
+                seriales=seriales,
+            )
+
+            for equipo in equipos:
+                equipo["ultima_etapa"] = (
+                    "Solicitud de alta enviada " "a la Network destino"
+                )
+
+                print(
+                    f"✓ {equipo['serial']} | " "Solicitud enviada a la Network destino"
+                )
+
+            return equipos
+
+        except requests.HTTPError as error:
+            ultimo_error = error
+
+            detalle_meraki = error.response.text if error.response is not None else ""
+
+            if error_es_incompatibilidad_nbar(error):
+                print(
+                    "\nMeraki no permitió agregar uno o más "
+                    "equipos porque la Network tiene NBAR activo "
+                    "y el modelo no es compatible.\n"
+                )
+
+                for equipo in equipos:
+                    equipo["resultado"] = "Error"
+                    equipo["ultima_etapa"] = "Agregar a Network destino"
+                    equipo["error"] = (
+                        "Modelo incompatible con una Network " "que utiliza NBAR."
+                    )
+
+                    print(
+                        f"✗ {equipo['serial']} | "
+                        "Debe utilizarse una Network compatible "
+                        "o revisar la configuración NBAR."
+                    )
+
+                return []
+
+            if intento < intentos:
+                print(
+                    "\nMeraki todavía no permitió agregar " "los equipos a la Network."
+                )
+                print(
+                    f"Reintentando en {espera_segundos} segundos "
+                    f"({intento}/{intentos})...\n"
+                )
+
+                time.sleep(espera_segundos)
+                continue
+
+            break
+
+        except requests.RequestException as error:
+            ultimo_error = error
+
+            if intento < intentos:
+                print("\nNo fue posible completar la solicitud.")
+                print(
+                    f"Reintentando en {espera_segundos} segundos "
+                    f"({intento}/{intentos})...\n"
+                )
+
+                time.sleep(espera_segundos)
+                continue
+
+            break
+
+    if detalle_meraki:
+        print("\nDetalle devuelto por Meraki:\n" f"{detalle_meraki}\n")
+
+    for equipo in equipos:
+        equipo["resultado"] = "Error"
+        equipo["ultima_etapa"] = "Agregar a Network destino"
+        equipo["error"] = str(ultimo_error or "Error desconocido")
+
+        print(f"✗ {equipo['serial']} | " "No se pudo agregar a la Network destino")
+
+    return []
+
+
 def procesar_alta_equipos(
     equipos: list[dict],
     network_destino: dict,
 ) -> None:
     """
-    Mueve o agrega los equipos a la Network destino y después
-    actualiza sus nombres y tags.
+    Mueve o agrega los equipos MR y MS a la Network destino.
     """
 
     if not cambios_habilitados():
@@ -232,22 +516,26 @@ def procesar_alta_equipos(
 
     equipos_ya_en_destino = []
     equipos_para_agregar = []
-    equipos_retirados = []
 
     for equipo in equipos:
-        if equipo["estado"] == "Ya se encuentra en la Network destino":
-            equipos_ya_en_destino.append(equipo)
+        equipo["resultado"] = "Pendiente"
+        equipo["ultima_etapa"] = "Validación"
+        equipo["error"] = None
 
+        if equipo["network_actual_id"] == network_destino["id"]:
+            equipos_ya_en_destino.append(equipo)
         else:
             equipos_para_agregar.append(equipo)
 
     print("\n=== PROCESANDO ALTA ===\n")
 
-    # Retirar los equipos que actualmente están en otra Network.
+    # Retirar únicamente los equipos que están
+    # asignados a otra Network.
     for equipo in equipos_para_agregar:
         network_anterior_id = equipo.get("network_actual_id")
 
         if network_anterior_id is None:
+            equipo["ultima_etapa"] = "Disponible en inventario"
             continue
 
         print(f"Retirando {equipo['serial']} " "de su Network anterior...")
@@ -258,117 +546,108 @@ def procesar_alta_equipos(
                 serial=equipo["serial"],
             )
 
-            equipos_retirados.append(equipo)
+            equipo["ultima_etapa"] = "Retirado de la Network anterior"
+
+            print(f"✓ {equipo['serial']} | " "Retirado correctamente")
 
         except requests.RequestException as error:
-            equipo["resultado"] = "Error al retirar"
+            equipo["resultado"] = "Error"
+            equipo["ultima_etapa"] = "Retirar de Network anterior"
             equipo["error"] = str(error)
 
-            print(f"✗ No se pudo retirar {equipo['serial']}: " f"{error}")
+            print(f"✗ No se pudo retirar " f"{equipo['serial']}: {error}")
 
-    equipos_listos_para_claim = [
-        equipo
-        for equipo in equipos_para_agregar
-        if equipo.get("resultado") != "Error al retirar"
+    # Excluir los equipos que no pudieron retirarse.
+    equipos_listos_para_agregar = [
+        equipo for equipo in equipos_para_agregar if equipo["resultado"] != "Error"
     ]
 
-    # Agregar todos los equipos disponibles a la Network destino.
-    if equipos_listos_para_claim:
-        seriales = [equipo["serial"] for equipo in equipos_listos_para_claim]
-
+    if equipos_listos_para_agregar:
         print(
-            f"\nAgregando {len(seriales)} equipo(s) a " f"{network_destino['name']}..."
+            f"\nAgregando "
+            f"{len(equipos_listos_para_agregar)} "
+            f"equipo(s) a {network_destino['name']}..."
         )
 
-        try:
-            respuesta_claim = agregar_dispositivos_network(
-                network_id=network_destino["id"],
-                seriales=seriales,
-            )
+    equipos_agregados = agregar_equipos_network_con_reintentos(
+        equipos=equipos_listos_para_agregar,
+        network_destino_id=network_destino["id"],
+    )
 
-            errores_claim = {
-                error["serial"]: error.get("errors", [])
-                for error in respuesta_claim.get("errors", [])
-            }
+    # Los equipos que ya estaban en destino no necesitan
+    # volver a agregarse, pero sí deben actualizarse.
+    equipos_para_configurar = equipos_agregados + equipos_ya_en_destino
 
-            for equipo in equipos_listos_para_claim:
-                errores = errores_claim.get(equipo["serial"])
+    print("\n=== ACTUALIZANDO EQUIPOS ===\n")
 
-                if errores:
-                    equipo["resultado"] = "Error al agregar"
-                    equipo["error"] = "; ".join(errores)
-
-        except requests.RequestException as error:
-            print(
-                "\n✗ Falló el alta de los dispositivos "
-                f"en la Network destino: {error}"
-            )
-
-            for equipo in equipos_listos_para_claim:
-                equipo["resultado"] = "Error al agregar"
-                equipo["error"] = str(error)
-
-    equipos_para_configurar = equipos_ya_en_destino + [
-        equipo
-        for equipo in equipos_listos_para_claim
-        if equipo.get("resultado") != "Error al agregar"
-    ]
-
-    # Esperar y después actualizar nombre y tags.
     for equipo in equipos_para_configurar:
+        if equipo["resultado"] == "Error":
+            continue
+
         serial = equipo["serial"]
 
         print(f"\nVerificando {serial}...")
 
-        disponible = esperar_dispositivo_en_network(
-            serial=serial,
-            network_id=network_destino["id"],
-        )
+        try:
+            disponible = esperar_dispositivo_en_network(
+                serial=serial,
+                network_id=network_destino["id"],
+            )
+
+        except requests.RequestException as error:
+            equipo["resultado"] = "Error"
+            equipo["ultima_etapa"] = "Verificar equipo en destino"
+            equipo["error"] = str(error)
+
+            print(f"✗ No fue posible verificar " f"{serial}: {error}")
+            continue
 
         if not disponible:
-            equipo["resultado"] = "No disponible después del alta"
+            equipo["resultado"] = "Error"
+            equipo["ultima_etapa"] = "Esperar equipo en Network destino"
             equipo["error"] = (
-                "El dispositivo no apareció en la Network "
-                "destino dentro del tiempo esperado."
+                "El dispositivo no apareció en la "
+                "Network destino dentro del tiempo esperado."
             )
 
             print(f"✗ {serial} no apareció a tiempo " "en la Network destino.")
             continue
 
-        try:
-            actualizar_dispositivo(
-                serial=serial,
-                nombre=equipo["nombre"],
-                tags=equipo["tags"],
-            )
-
-            equipo["resultado"] = "Correcto"
-
-            print(
-                f"✓ {serial} | "
-                f"{equipo['nombre']} | "
-                f"Tags: {', '.join(equipo['tags']) or 'Sin tags'}"
-            )
-
-        except requests.RequestException as error:
-            equipo["resultado"] = "Error de configuración"
-            equipo["error"] = str(error)
-
-            print(f"✗ No se pudo configurar {serial}: {error}")
+        actualizar_equipo_con_reintentos(equipo)
 
     print("\n=== RESULTADO FINAL ===\n")
 
+    correctos = 0
+    errores = 0
+    pendientes_actualizacion = 0
+
     for equipo in equipos:
-        resultado = equipo.get("resultado", "Sin procesar")
+        resultado = equipo.get(
+            "resultado",
+            "Sin procesar",
+        )
 
         print(f"{equipo['serial']} | " f"{equipo['modelo']} | " f"{resultado}")
+
+        if equipo.get("ultima_etapa"):
+            print(f"  Última etapa: " f"{equipo['ultima_etapa']}")
 
         if equipo.get("error"):
             print(f"  Error: {equipo['error']}")
 
-    correctos = sum(equipo.get("resultado") == "Correcto" for equipo in equipos)
+        if resultado == "Correcto":
+            correctos += 1
 
-    print(f"\nCompletados correctamente: " f"{correctos}/{len(equipos)}\n")
+        elif resultado == "Error":
+            errores += 1
+
+        elif resultado == ("Movimiento correcto, actualización pendiente"):
+            pendientes_actualizacion += 1
+
+    print("\nResumen:")
+    print(f"- Correctos: {correctos}")
+    print(f"- Errores: {errores}")
+    print("- Movidos con actualización pendiente: " f"{pendientes_actualizacion}")
 
 
 def alta_evento():
@@ -420,11 +699,9 @@ def alta_evento():
 
     except requests.RequestException as error:
         print(
-            "\nNo fue posible revisar la numeración actual "
-            f"de la Network: {error}\n"
+            "\nNo fue posible revisar la numeración actual " f"de la Network: {error}\n"
         )
         return
-
 
     equipos = crear_lista_equipos(
         seriales=seriales,
@@ -458,12 +735,33 @@ def alta_evento():
     print("\n=== VALIDACIÓN DE EQUIPOS ===\n")
 
     for equipo in equipos_validos:
+        print("-" * 60)
+
         print(
-            f"{equipo['serial']} | "
-            f"{equipo['modelo']} | "
-            f"{equipo['estado']} | "
-            f"Nuevo nombre: {equipo['nombre']}"
+            f"{equipo['serial']} | " f"{equipo['modelo']} | " f"Tipo: {equipo['tipo']}"
         )
+
+        print(f"Estado: {equipo['estado']}")
+
+        if equipo["procesable"]:
+            print(f"Nuevo nombre: " f"{equipo['nombre']}")
+
+            if equipo["tipo"] == "MR":
+                print(
+                    "Tags actuales: "
+                    f"{', '.join(equipo['tags_actuales']) or 'Sin tags'} "
+                )
+
+                print(
+                    "Tags finales: "
+                    f"{', '.join(equipo['tags_finales']) or 'Sin tags'} "
+                )
+
+            elif equipo["tipo"] == "MS":
+                print("Tags: se conservarán sin cambios")
+
+        else:
+            print(f"Bloqueado: " f"{equipo['motivo_bloqueo']}")
 
     if seriales_no_encontrados:
         print("\nNo encontrados en el inventario:\n")
@@ -482,6 +780,12 @@ def alta_evento():
         print("\nNo hay equipos válidos para procesar.\n")
         return
 
+    equipos_procesables = [equipo for equipo in equipos_validos if equipo["procesable"]]
+
+    if not equipos_procesables:
+        print("\nNo hay equipos MR o MS disponibles " "para procesar.\n")
+        return
+
     print(
         "\nADVERTENCIA: esta operación puede mover equipos "
         "desde otras Networks y cambiar sus nombres y tags."
@@ -494,6 +798,6 @@ def alta_evento():
         return
 
     procesar_alta_equipos(
-        equipos=equipos_validos,
+        equipos=equipos_procesables,
         network_destino=network,
     )

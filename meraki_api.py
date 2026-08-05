@@ -216,7 +216,7 @@ def actualizar_nombre_dispositivo(
     nombre: str,
 ) -> dict:
     """
-    Funcion especifica para modulo desmontaje.
+    Funcion para modulo desmontaje y ya se usa para alta equipos y alta masiva.
     Actualiza únicamente el nombre de un dispositivo,
     sin modificar sus tags ni otras propiedades.
     """
@@ -298,6 +298,12 @@ def obtener_dispositivos_network(network_id: str) -> list[dict]:
             url = None
 
     return dispositivos
+
+
+#############
+#Inicio de funciones de modulo actualizacion de politicas
+
+
 
 
 def inicializar():
