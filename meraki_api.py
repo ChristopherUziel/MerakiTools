@@ -301,9 +301,72 @@ def obtener_dispositivos_network(network_id: str) -> list[dict]:
 
 
 #############
-#Inicio de funciones de modulo actualizacion de politicas
+# Inicio de funciones de modulo actualizacion de politicas
 
 
+def obtener_politicas_grupo(
+    network_id: str,
+) -> list[dict]:
+    """
+    Obtiene todas las Group Policies configuradas
+    dentro de una Network
+    """
+
+    respuesta = requests.get(
+        f"{BASE_URL}/networks/{network_id}/groupPolicies",
+        headers=crear_headers(),
+        timeout=30,
+    )
+
+    respuesta.raise_for_status()
+
+    return respuesta.json()
+
+
+def crear_politica_grupo(
+    network_id: str,
+    configuracion: dict,
+) -> dict:
+    """
+    Crea una Group Policy dentro de una Network.
+
+    configuracion contiene el nombre y las reglas
+    de la política que se desea crear.
+    """
+
+    respuesta = requests.post(
+        f"{BASE_URL}/networks/{network_id}/groupPolicies",
+        headers=crear_headers(),
+        json=configuracion,
+        timeout=60,
+    )
+
+    respuesta.raise_for_status()
+
+    return respuesta.json()
+
+
+def actualizar_politica_grupo(
+    network_id: str,
+    group_policy_id: str,
+    configuracion: dict,
+) -> dict:
+    """
+    Actualiza una Group Policy existente dentro de una Network.
+    """
+
+    respuesta = requests.put(
+        (f"{BASE_URL}/networks/{network_id}" f"/groupPolicies/{group_policy_id}"),
+        headers=crear_headers(),
+        json=configuracion,
+        timeout=60,
+    )
+
+    respuesta.raise_for_status()
+
+    return respuesta.json()
+
+////TERMINE AQUI Y NUEVO MS EN CH
 
 
 def inicializar():
