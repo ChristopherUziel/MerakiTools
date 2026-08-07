@@ -151,7 +151,10 @@ def crear_lista_equipos(
     return equipos
 
 
-def seleccionar_organizacion() -> dict:
+def seleccionar_organizacion(
+        descripcion: str = "de destino",
+) -> dict:
+    
     organizaciones = obtener_organizaciones()
 
     if not organizaciones:
@@ -162,7 +165,7 @@ def seleccionar_organizacion() -> dict:
     for indice, organizacion in enumerate(organizaciones, start=1):
         print(f"{indice}. {organizacion['name']}")
 
-    opcion = input("\nSelecciona una organización de destino:\n> ").strip()
+    opcion = input(f"\nSelecciona una organización {descripcion}:\n> ").strip()
 
     if not opcion.isdigit():
         raise ValueError("Debes ingresar un número.")
@@ -175,7 +178,10 @@ def seleccionar_organizacion() -> dict:
     return organizaciones[indice]
 
 
-def seleccionar_network(organization_id: str) -> dict:
+def seleccionar_network(
+        organization_id: str,
+        descripcion: str = "de destino",
+) -> dict:
     networks = obtener_networks(organization_id)
 
     if not networks:
@@ -188,7 +194,7 @@ def seleccionar_network(organization_id: str) -> dict:
     for indice, network in enumerate(networks, start=1):
         print(f"{indice}. {network['name']}")
 
-    opcion = input("\nSelecciona la Network de destino:\n> ").strip()
+    opcion = input(f"\nSelecciona la Network {descripcion}:\n> ").strip()
 
     if not opcion.isdigit():
         raise ValueError("Debes ingresar un número.")

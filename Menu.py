@@ -8,6 +8,9 @@ from modules.buscar import buscar, buscar_todas_organizaciones
 from modules.reportes import reportes
 from config import configurar_api_key_si_es_necesario
 
+## imports de modulo politicas
+from modules.politicas import sincronizar_politicas
+
 
 
 def mostrar_menu():
@@ -19,8 +22,9 @@ def mostrar_menu():
     print("3. Desmontaje")
     print("4. Buscar Equipo en una Organización")
     print("5. Buscar Equipo en todas las Organizaciones")
-    print("6. Reportes")
-    print("7. Salir")
+    print("6. Sincronizar Group Policies")
+    print("7. Reportes")
+    print("8. Salir")
     print("=" * 40)
 
 
@@ -57,9 +61,12 @@ def main():
             buscar_todas_organizaciones()
 
         elif opcion == "6":
-            reportes()
+            sincronizar_politicas()
 
         elif opcion == "7":
+            reportes()
+
+        elif opcion == "8":
             print("\n¡Hasta luego!")
             break
 

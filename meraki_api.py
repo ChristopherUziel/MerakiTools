@@ -366,8 +366,6 @@ def actualizar_politica_grupo(
 
     return respuesta.json()
 
-////TERMINE AQUI Y NUEVO MS EN CH
-
 
 def inicializar():
     print("\n=================================")
