@@ -461,7 +461,9 @@ def ejecutar_sincronizacion_politicas(
 
     print("\nSe realizarán " f"{len(resultados_con_cambios)} cambio(s).")
 
-    confirmacion = input("\nEscribe CONFIRMAR para continuar (Debe ser en mayusculas):\n> ").strip()
+    confirmacion = input(
+        "\nEscribe CONFIRMAR para continuar (Debe ser en mayusculas):\n> "
+    ).strip()
 
     if confirmacion != "CONFIRMAR":
         print("\nOperación cancelada. " "No se realizaron cambios.\n")
@@ -482,7 +484,20 @@ def ejecutar_sincronizacion_politicas(
 
     print("\n=== EJECUTANDO SINCRONIZACIÓN ===\n")
 
+    resumen_networks = {}
+
     for resultado in resultados:
+
+        network_id = resultado["network_id"]
+
+        if network_id not in resumen_networks:
+            resumen_networks[network_id] = {
+                "organization_name": resultado["organization_name"],
+                "network_name": resultado["network_name"],
+                "correctas": [],
+                "omitidas": [],
+            }
+
         accion = resultado["accion"]
 
         organizacion = resultado["organization_name"]
@@ -491,6 +506,13 @@ def ejecutar_sincronizacion_politicas(
 
         if accion == "Sin cambios":
             sin_cambios += 1
+
+            resumen_networks[network_id]["correctas"].append(
+                {
+                    "politica": politica,
+                    "accion": "Sin cambios",
+                }
+            )
 
             print(f"○ {organizacion} | {network} | " f"{politica} → Sin cambios")
             continue
@@ -504,6 +526,13 @@ def ejecutar_sincronizacion_politicas(
 
                 creadas += 1
 
+                resumen_networks[network_id]["correctas"].append(
+                    {
+                        "politica": politica,
+                        "accion": "Creada",
+                    }
+                )
+
                 print(f"✓ {organizacion} | {network} | " f"{politica} → Creada")
 
             elif accion == "Actualizar":
@@ -515,6 +544,13 @@ def ejecutar_sincronizacion_politicas(
 
                 actualizadas += 1
 
+                resumen_networks[network_id]["correctas"].append(
+                    {
+                        "politica": politica,
+                        "accion": "Actualizada",
+                    }
+                )
+
                 print(f"✓ {organizacion} | {network} | " f"{politica} → Actualizada")
 
         except requests.HTTPError as error:
@@ -522,11 +558,25 @@ def ejecutar_sincronizacion_politicas(
 
             detalle = error.response.text if error.response is not None else str(error)
 
+            resumen_networks[network_id]["omitidas"].append(
+                {
+                    "politica": politica,
+                    "motivo": detalle,
+                }
+            )
+
             print(f"✗ {organizacion} | {network} | " f"{politica} → Error")
             print(f"  Detalle: {detalle}")
 
         except requests.RequestException as error:
             errores += 1
+
+            resumen_networks[network_id]["omitidas"].append(
+                {
+                    "politica": politica,
+                    "motivo": error,
+                }
+            )
 
             print(f"✗ {organizacion} | {network} | " f"{politica} → Error de conexión")
             print(f"  Detalle: {error}")
@@ -537,11 +587,47 @@ def ejecutar_sincronizacion_politicas(
     print(f"- Sin cambios: {sin_cambios}")
     print(f"- Errores: {errores}")
 
+    # Resumen detallado por Network
+    print("\n=== RESUMEN POR NETWORK ===\n")
+
+    networks_completas = 0
+    networks_parciales = 0
+
+    for datos in resumen_networks.values():
+        print(f"{datos['organization_name']} | " f"{datos['network_name']}")
+
+        for politica_correcta in datos["correctas"]:
+            print(
+                f"  ✓ {politica_correcta['politica']} "
+                f"→ {politica_correcta['accion']}"
+            )
+
+        if datos["omitidas"]:
+            networks_parciales += 1
+
+            print("  Estado: PARCIAL")
+
+            for politica_omitida in datos["omitidas"]:
+                print(f"  ✗ {politica_omitida['politica']} " "→ Omitida")
+
+                print(f"    Motivo: " f"{politica_omitida['motivo']}")
+
+        else:
+            networks_completas += 1
+            print("  Estado: COMPLETA")
+
+        print()
+
+    #Resumen de networks
+    print("Resumen de Networks:")
+    print(f"- Actualizadas completamente: " f"{networks_completas}")
+    print(f"- Con políticas omitidas: " f"{networks_parciales}")
+
 
 def sincronizar_politicas() -> None:
     """
     Selecciona una Network modelo y permite escoger
-    las Group Policies que posteriormente se copiarán.
+    las Group Policies que se actualizaran
     """
 
     print("\n" + "=" * 50)
@@ -581,9 +667,7 @@ def sincronizar_politicas() -> None:
 
         mostrar_analisis_politicas(resultados)
 
-        ejecutar_sincronizacion_politicas(
-            resultados
-        )
+        ejecutar_sincronizacion_politicas(resultados)
 
     except ValueError as error:
         print(f"\nError de selección: {error}\n")

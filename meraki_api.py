@@ -21,7 +21,7 @@ def crear_headers() -> dict:
 
 def obtener_organizaciones() -> list[dict]:
     """
-    Obtiene las organizaciones disponibles para el usuario.
+    Obtiene las organizaciones disponibles
     """
 
     respuesta = requests.get(

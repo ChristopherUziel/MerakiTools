@@ -48,8 +48,7 @@ def cargar_configuracion() -> dict:
 
 def obtener_api_key() -> str:
     """
-    Obtiene la API Key desde el almacén de credenciales
-    de Windows.
+    Obtiene la API Key desde credenciales de windows
     """
 
     api_key = keyring.get_password(
