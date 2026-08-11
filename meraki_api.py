@@ -366,6 +366,49 @@ def actualizar_politica_grupo(
 
     return respuesta.json()
 
+##########
+#Inicio Content Filtering
+
+def obtener_content_filtering(
+    network_id: str,
+) -> dict:
+    """
+    Obtiene todo el content filtering
+    """
+
+    respuesta = requests.get(
+        f"{BASE_URL}/networks/{network_id}/appliance/contentFiltering",
+        headers=crear_headers(),
+        timeout=30,
+    )
+
+    respuesta.raise_for_status()
+
+    return respuesta.json()
+
+
+def actualizar_content_filtering(
+    network_id: str,
+    configuracion: dict,
+) -> dict:
+    """
+    Crea la configuracion de Content Filtering en una network
+    """
+
+    respuesta = requests.put(
+        f"{BASE_URL}/networks/{network_id}/appliance/contentFiltering",
+        headers=crear_headers(),
+        json=configuracion,
+        timeout=60,
+    )
+
+    respuesta.raise_for_status()
+
+    return respuesta.json()
+
+#########
+#Traffic shaping
+
 
 def inicializar():
     print("\n=================================")
