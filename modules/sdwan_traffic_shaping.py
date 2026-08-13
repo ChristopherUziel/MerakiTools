@@ -490,10 +490,25 @@ def ejecutar_sincronizacion_sdwan(
 
     print("\n == EJECUTANDO SINCRONIZACIÓN ==\n")
 
+    resumen_networks = {}
+
     for resultado in resultados:
         network_id = resultado["network_id"]
         organizacion = resultado["organization_name"]
         network = resultado["network_name"]
+
+        resumen_networks[network_id] = {
+            "organization_name": organizacion,
+            "network_name": network,
+            "traffic_shaping": {
+                "estado": None,
+                "motivo": None,
+            },
+            "vpn_exclusions": {
+                "estado": None,
+                "motivo": None,
+            },
+        }
 
         print(f"\n{organizacion} | {network}")
 
@@ -508,6 +523,10 @@ def ejecutar_sincronizacion_sdwan(
 
                 print("✓ Traffic Shaping Rules → Actualizadas")
 
+                resumen_networks[network_id]["traffic_shaping"][
+                    "estado"
+                ] = "Actualizada"
+
             except requests.HTTPError as error:
                 detalle = (
                     error.response.text if error.response is not None else str(error)
@@ -515,6 +534,9 @@ def ejecutar_sincronizacion_sdwan(
 
                 print("✗ Traffic Shaping Rules → Error")
                 print(f"Motivo: {detalle}")
+
+                resumen_networks[network_id]["traffic_shaping"]["estado"] = "Error"
+                resumen_networks[network_id]["traffic_shaping"]["motivo"] = detalle
 
             except requests.RequestException as error:
 
@@ -524,8 +546,15 @@ def ejecutar_sincronizacion_sdwan(
         elif traffic["accion"] == "Sin cambios":
             print("  ○  Traffic Shaping Rules → Sin cambios")
 
+            resumen_networks[network_id]["traffic_shaping"]["estado"] = "Sin cambios"
+
         elif traffic["accion"] == "Omitir":
             print("  ⚠ Traffic Shaping Rules → Omitidas ")
+
+            resumen_networks[network_id]["traffic_shaping"]["estado"] = "Omitida"
+            resumen_networks[network_id]["traffic_shaping"]["motivo"] = traffic.get(
+                "motivo"
+            )
 
             if traffic.get("motivo"):
                 print(f"    Motivo: {traffic['motivo']}")
@@ -542,11 +571,18 @@ def ejecutar_sincronizacion_sdwan(
 
                 print("  ✓ VPN Exclusions → Actualizadas")
 
+                resumen_networks[network_id]["vpn_exclusions"]["estado"] = "Actualizada"
+
             except requests.HTTPError as error:
-                detalle = error.response.text if error.response is not None else str(error)
+                detalle = (
+                    error.response.text if error.response is not None else str(error)
+                )
 
                 print("  ✗ VPN Exclusions → Error")
                 print(f"    Motivo: {detalle}")
+
+                resumen_networks[network_id]["vpn_exclusions"]["estado"] = "Error"
+                resumen_networks[network_id]["vpn_exclusions"]["motivo"] = detalle
 
             except requests.RequestException as error:
                 print("  ✗ VPN Exclusions → Error")
@@ -555,9 +591,42 @@ def ejecutar_sincronizacion_sdwan(
         elif vpn["accion"] == "Sin cambios":
             print("  ○ VPN Exclusions → Sin cambios")
 
+            resumen_networks[network_id]["vpn_exclusions"]["estado"] = "Sin cambios"
+
         elif vpn["accion"] == "Omitir":
             print("  ⚠ VPN Exclusions → Omitidas")
 
+            resumen_networks[network_id]["vpn_exclusions"]["estado"] = "Omitida"
+            resumen_networks[network_id]["vpn_exclusions"]["motivo"] = traffic.get(
+                "motivo"
+            )
+
             if vpn.get("motivo"):
                 print(f"    Motivo: {vpn['motivo']}")
-########hasta aqui me quede, falta resumen de resultados por network, ya se iba a empezar
+
+    completas = 0
+    parciales = 0
+    sin_cambios = 0
+
+    for datos in resumen_networks.values():
+        traffic = datos["traffic_shaping"]
+        vpn = datos["vpn_exclusions"]
+
+        estados = {
+            traffic["estado"],
+            vpn["estado"],
+        }
+
+        if estados <= {"Sin cambios"}:
+            sin_cambios += 1
+
+        elif "Error" in estados or "Omitida" in estados:
+            parciales += 1
+
+        else:
+            completas += 1
+
+    print("Resumen:")
+    print(f"- Completas: {completas}")
+    print(f"- Parciales: {parciales}")
+    print(f"- Sin cambios: {sin_cambios}")
