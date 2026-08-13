@@ -11,6 +11,9 @@ from config import configurar_api_key_si_es_necesario
 ## imports de modulo politicas
 from modules.politicas import sincronizar_politicas
 
+## imports modulo traffic shaping
+from modules.sdwan_traffic_shaping import sincronizar_sdwan_traffic_shaping
+
 
 
 def mostrar_menu():
@@ -23,8 +26,9 @@ def mostrar_menu():
     print("4. Buscar Equipo en una Organización")
     print("5. Buscar Equipo en todas las Organizaciones")
     print("6. Sincronizar Group Policies")
-    print("7. Reportes")
-    print("8. Salir")
+    print("7. Sincronizar SD-WAN & Traffic shaping")
+    print("8. Reportes")
+    print("9. Salir")
     print("=" * 40)
 
 
@@ -64,9 +68,12 @@ def main():
             sincronizar_politicas()
 
         elif opcion == "7":
-            reportes()
+            sincronizar_sdwan_traffic_shaping()
 
         elif opcion == "8":
+            reportes()
+
+        elif opcion == "9":
             print("\n¡Hasta luego!")
             break
 

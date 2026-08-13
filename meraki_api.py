@@ -366,8 +366,10 @@ def actualizar_politica_grupo(
 
     return respuesta.json()
 
+
 ##########
-#Inicio Content Filtering
+# Inicio Content Filtering
+
 
 def obtener_content_filtering(
     network_id: str,
@@ -406,8 +408,93 @@ def actualizar_content_filtering(
 
     return respuesta.json()
 
+
 #########
-#Traffic shaping
+# Traffic shaping
+
+
+def obtener_vpn_exclusions_organizacion(
+    organization_id: str,
+) -> dict:
+    """
+    Obtiene las reglas de VPN exclusion de las Networks con MX
+    de una organización
+    """
+
+    respuesta = requests.get(
+        (
+            f"{BASE_URL}/organizations/{organization_id}/appliance/trafficShaping/vpnExclusions/byNetwork"
+        ),
+        headers=crear_headers(),
+        timeout=30,
+    )
+
+    respuesta.raise_for_status()
+
+    return respuesta.json()
+
+
+def obtener_traffic_shaping_rules(
+    network_id: str,
+) -> dict:
+    """
+    Obtiene las Traffic Shaping Rules
+    """
+
+    respuesta = requests.get(
+        (f"{BASE_URL}/networks/{network_id}/appliance/trafficShaping/rules"),
+        headers=crear_headers(),
+        timeout=30,
+    )
+
+    respuesta.raise_for_status()
+
+    return respuesta.json()
+
+
+def actualizar_traffic_shaping_rules(
+        network_id: str,
+        configuracion: dict,
+) -> dict:
+
+    """
+    Actualiza la configuraciond e traffic shaping rules de las networks seleccionadas
+    """
+
+    respuesta = requests.put(
+        f"{BASE_URL}/networks/{network_id}/appliance/trafficShaping/rules",
+        headers=crear_headers(),
+        json=configuracion,
+        timeout=60,
+    )
+
+    respuesta.raise_for_status()
+
+    return respuesta.json()
+
+
+def actualizar_vpn_esclusions(
+        network_id: str,
+        configuracion: dict,
+) -> dict:
+
+    """
+    Actualiza la configuracion de vpn exclussion en la network seleccionada
+    """
+
+    respuesta = requests.put(
+        f"{BASE_URL}/networks/{network_id}/appliance/trafficShaping/vpnExclusions",
+        headers=crear_headers(),
+        json=configuracion,
+        timeout=60,
+    )
+
+    respuesta.raise_for_status()
+
+    return respuesta.json()
+
+#########
+# Busqueda de usaurios por ip
 
 
 def inicializar():
