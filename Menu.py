@@ -14,9 +14,16 @@ from modules.politicas import sincronizar_politicas
 ## imports modulo traffic shaping
 from modules.sdwan_traffic_shaping import sincronizar_sdwan_traffic_shaping
 
+__author__ = "Christopher Uziel Martinez Alvarez"
+__project__ = "MerakiTools"
+__version__ = "1.0"
+
 
 
 def mostrar_menu():
+
+    print("\n" + "=" * 40)
+    print("Desarrollado por Christopher Martinez")
     print("\n" + "=" * 40)
     print("      MERAKI TOOLS")
     print("=" * 40)

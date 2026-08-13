@@ -1,3 +1,11 @@
+"""
+MerakiTools
+Herramienta de automatización para Cisco Meraki.
+
+Desarrollado por: Christopher Uziel Martinez Alvarez
+Año: 2026
+"""
+
 import requests
 import time
 

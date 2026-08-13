@@ -1,14 +1,20 @@
 # MerakiTools
 
-Herramienta de automatización para Cisco Meraki orientada a eventos temporales.
+Herramienta de automatización para Cisco Meraki.
+
+Desarrollado por: Christopher Uziel Martinez Alvarez
+Año: 2026
+
 
 ## Objetivos
 
-- Alta masiva de equipos.
-- Recuperación de equipos.
-- Renombrado automático.
-- Gestión de tags.
-- Reportes.
-- Automatización mediante Meraki Dashboard API.
+- Alta de Equipos en la misma Organización
+- Alta masiva entre Organizaciones
+- Desmontaje
+- Buscar Equipo en una Organización
+- Buscar Equipo en todas las Organizaciones
+- Sincronizar Group Policies
+- Sincronizar SD-WAN & Traffic shapg
+- Reportes
 
-Versión actual: v0.3.0
+Versión actual: v1.0
