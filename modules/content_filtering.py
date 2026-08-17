@@ -5,6 +5,7 @@ from meraki_api import (
     obtener_networks,
     obtener_organizaciones,
     obtener_content_filtering,
+    actualizar_content_filtering,
 )
 from modules.alta_evento import (
     seleccionar_network,
@@ -16,12 +17,28 @@ def preparar_content_filtering(
     filtering_modelo: dict,
 ) -> dict:
     """
-    Prepara una copia de la configuracion de content filtering para pegarla en otra network
+    Prepara Content Filtering para compararlo.
 
-    Omite lo que no se necesiatara en campos_omitidos
+    Convierte las categorías al formato del PUT
     """
 
     configuracion = copy.deepcopy(filtering_modelo)
+
+    categorias = configuracion.get("blockedUrlCategories", [])
+
+    categorias_preparadas = []
+
+    for categoria in categorias:
+        if isinstance(categoria, dict):
+            categoria_id = categoria.get("id")
+
+            if categoria_id:
+                categorias_preparadas.append(categoria_id)
+
+        elif isinstance(categoria, str):
+            categorias_preparadas.append(categoria)
+
+    configuracion["blockedUrlCategories"] = categorias_preparadas
 
     return configuracion
 
@@ -285,3 +302,141 @@ def analizar_filtering_destino(
         )
 
     return resultados
+
+
+def mostrar_analisis_filtering(
+    resultados: list[dict],
+) -> None:
+    """
+    Muestra qué se hará en cada Network de destino
+    """
+
+    print("\n=== ANÁLISIS CONTENT FILTERING ===\n")
+
+    for resultado in resultados:
+        print(
+            f"{resultado['organization_name']} | "
+            f"{resultado['network_name']} "
+            f"→ {resultado['accion']}"
+        )
+
+
+def ejecutar_sincronizacion_filtering(
+    resultados: list[dict],
+) -> None:
+    """
+    Actualiza Content Filtering en las Networks
+    que hayan sido clasificadas como Actualizar.
+    """
+
+    cambios_pendientes = any(
+        resultado["accion"] == "Actualizar" for resultado in resultados
+    )
+
+    if not cambios_pendientes:
+        print(
+            "\nTodas las Networks seleccionadas " "ya tienen la misma configuración.\n"
+        )
+        return
+
+    confirmacion = input("\nEscribe CONFIRMAR para aplicar los cambios:\n> ").strip()
+
+    if confirmacion != "CONFIRMAR":
+        print("\nOperación cancelada. " "No se realizaron cambios.\n")
+        return
+
+    if not cambios_habilitados():
+        print(
+            "\nLas operaciones de escritura están bloqueadas "
+            "en config/settings.json."
+        )
+        print("No se realizaron cambios en Meraki.\n")
+        return
+
+    actualizadas = 0
+    sin_cambios = 0
+    errores = 0
+
+    print("\n=== EJECUTANDO SINCRONIZACIÓN ===\n")
+
+    for resultado in resultados:
+        organizacion = resultado["organization_name"]
+        network = resultado["network_name"]
+
+        if resultado["accion"] == "Sin cambios":
+            sin_cambios += 1
+
+            print(f"{organizacion} | {network} " "→ Sin cambios")
+            continue
+
+        try:
+            actualizar_content_filtering(
+                network_id=resultado["network_id"],
+                configuracion=resultado["configuracion"],
+            )
+
+            actualizadas += 1
+
+            print(f"✓ {organizacion} | {network} " "→ Content Filtering actualizado")
+
+        except requests.HTTPError as error:
+            errores += 1
+
+            detalle = error.response.text if error.response is not None else str(error)
+
+            print(f"✗ {organizacion} | {network} " "→ Omitida")
+            print(f"  Motivo: {detalle}")
+
+        except requests.RequestException as error:
+            errores += 1
+
+            print(f"✗ {organizacion} | {network} " "→ Error")
+            print(f"  Motivo: {error}")
+
+    print("\nResumen:")
+    print(f"- Actualizadas: {actualizadas}")
+    print(f"- Sin cambios: {sin_cambios}")
+    print(f"- Omitidas / errores: {errores}")
+
+
+def sincronizar_content_filtering() -> None:
+    """
+    Sincroniza Content Filtering
+    """
+
+    print("\n" + "=" * 50)
+    print(" SINCRONIZACIÓN DE CONTENT FILTERING")
+    print("=" * 50)
+
+    try:
+        organizacion_modelo = seleccionar_organizacion("modelo")
+
+        network_modelo = seleccionar_network(
+            organization_id=organizacion_modelo["id"],
+            descripcion="modelo",
+        )
+
+        print("\nConsultando Content Filtering de " f"{network_modelo['name']}...")
+
+        filtering_modelo = obtener_content_filtering(network_modelo["id"])
+
+        mostrar_filtering_seleccionado(filtering_modelo)
+
+        networks_destino = seleccionar_networks_destino(
+            network_modelo_id=network_modelo["id"],
+        )
+
+        resultados = analizar_filtering_destino(
+            filtering_modelo=filtering_modelo,
+            networks_destino=networks_destino,
+        )
+
+        mostrar_analisis_filtering(resultados)
+
+        ejecutar_sincronizacion_filtering(resultados)
+
+    except ValueError as error:
+        print(f"\nError de selección: {error}\n")
+
+    except requests.RequestException as error:
+        print("\nNo fue posible completar la operación:\n" f"{error}\n")
