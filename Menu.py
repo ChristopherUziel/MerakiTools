@@ -27,8 +27,12 @@ __version__ = "1.0"
 
 def mostrar_menu():
 
+    arte_ascii = """
+        OCESA
+    """
+
     print("\n" + "=" * 40)
-    print("Desarrollado por Christopher Martinez")
+    print(arte_ascii)
     print("\n" + "=" * 40)
     print("      MERAKI TOOLS")
     print("=" * 40)

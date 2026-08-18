@@ -27,12 +27,73 @@ def crear_headers() -> dict:
     }
 
 
+def hacer_peticion_meraki(
+    metodo: str,
+    url: str,
+    intentos: int = 10,
+    **kwargs,
+) -> requests.Response:
+    """
+    Realiza peticion a la API Meraki
+
+    Si Meraki responde con HTTP 429 (de limite de peticiones por segundo)
+    Los demás códigos HTTP se devuelven normalmente
+    para que raise_for_status() los maneje.
+    """
+
+    ultima_respuesta = None
+
+    for intento in range(1, intentos + 1):
+        respuesta = requests.request(
+            method=metodo,
+            url=url,
+            **kwargs,
+        )
+
+        ultima_respuesta = respuesta
+
+        if respuesta.status_code != 429:
+            return respuesta
+
+        retry_after = respuesta.headers.get("Retry-After")
+
+        if retry_after is not None:
+            try:
+                espera = float(retry_after)
+            except ValueError:
+                espera = min(
+                    2 ** (intento - 1),
+                    10,
+                )
+        else:
+            espera = min(
+                2 ** (intento - 1),
+                10,
+            )
+
+        if intento < intentos:
+            print("\n⚠ Límite de peticiones de Meraki alcanzado.")
+            print(
+                f"Esperando {espera:g} segundo(s) "
+                f"antes de reintentar "
+                f"({intento}/{intentos})..."
+            )
+
+            time.sleep(espera)
+
+    if ultima_respuesta is None:
+        raise RuntimeError("No se obtuvo respuesta de la API de Meraki.")
+
+    return ultima_respuesta
+
+
 def obtener_organizaciones() -> list[dict]:
     """
     Obtiene las organizaciones disponibles
     """
 
-    respuesta = requests.get(
+    respuesta = hacer_peticion_meraki(
+        "GET",
         f"{BASE_URL}/organizations",
         headers=crear_headers(),
         timeout=20,
@@ -49,7 +110,8 @@ def obtener_networks(organization_id: str) -> list[dict]:
     dentro de una organización.
     """
 
-    respuesta = requests.get(
+    respuesta = hacer_peticion_meraki(
+        "GET",
         f"{BASE_URL}/organizations/{organization_id}/networks",
         headers=crear_headers(),
         timeout=20,
@@ -69,7 +131,8 @@ def obtener_dispositivos_inventario(
     de la organización mediante sus seriales.
     """
 
-    respuesta = requests.get(
+    respuesta = hacer_peticion_meraki(
+        "GET",
         f"{BASE_URL}/organizations/{organization_id}/inventory/devices",
         headers=crear_headers(),
         params={
@@ -94,7 +157,7 @@ def liberar_dispositivos_organizacion(
     Antes de llamarla, primero se tienen que retirar de su network actual
     """
 
-    respuesta = requests.post(
+    respuesta = hacer_peticion_meraki("POST",
         (f"{BASE_URL}/organizations/" f"{organization_id}/inventory/release"),
         headers=crear_headers(),
         json={
@@ -116,7 +179,7 @@ def reclamar_dispositivos_organizacion(
     Reclama dispositivos dentre del inventario de la organizacion destino
     """
 
-    respuesta = requests.post(
+    respuesta = hacer_peticion_meraki("POST",
         (f"{BASE_URL}/organizations/" f"{organization_id}/inventory/claim"),
         headers=crear_headers(),
         json={
@@ -139,7 +202,7 @@ def retirar_dispositivo_network(
     en el inventario de la organización.
     """
 
-    respuesta = requests.post(
+    respuesta = hacer_peticion_meraki("POST",
         f"{BASE_URL}/networks/{network_id}/devices/remove",
         headers=crear_headers(),
         json={
@@ -162,7 +225,7 @@ def agregar_dispositivos_network(
     los equipos o no agregar ninguno.
     """
 
-    respuesta = requests.post(
+    respuesta = hacer_peticion_meraki("POST",
         f"{BASE_URL}/networks/{network_id}/devices/claim",
         headers=crear_headers(),
         params={
@@ -184,7 +247,8 @@ def obtener_dispositivo(serial: str) -> dict:
     Consulta un dispositivo individual mediante su serial.
     """
 
-    respuesta = requests.get(
+    respuesta = hacer_peticion_meraki(
+        "GET",
         f"{BASE_URL}/devices/{serial}",
         headers=crear_headers(),
         timeout=30,
@@ -204,7 +268,7 @@ def actualizar_dispositivo(
     Actualiza el nombre y los tags de un dispositivo.
     """
 
-    respuesta = requests.put(
+    respuesta = hacer_peticion_meraki("PUT",
         f"{BASE_URL}/devices/{serial}",
         headers=crear_headers(),
         json={
@@ -229,7 +293,7 @@ def actualizar_nombre_dispositivo(
     sin modificar sus tags ni otras propiedades.
     """
 
-    respuesta = requests.put(
+    respuesta = hacer_peticion_meraki("PUT",
         f"{BASE_URL}/devices/{serial}",
         headers=crear_headers(),
         json={
@@ -286,7 +350,8 @@ def obtener_dispositivos_network(network_id: str) -> list[dict]:
     }
 
     while url:
-        respuesta = requests.get(
+        respuesta = hacer_peticion_meraki(
+            "GET",
             url,
             headers=crear_headers(),
             params=parametros,
@@ -320,7 +385,8 @@ def obtener_politicas_grupo(
     dentro de una Network
     """
 
-    respuesta = requests.get(
+    respuesta = hacer_peticion_meraki(
+        "GET",
         f"{BASE_URL}/networks/{network_id}/groupPolicies",
         headers=crear_headers(),
         timeout=30,
@@ -342,7 +408,7 @@ def crear_politica_grupo(
     de la política que se desea crear.
     """
 
-    respuesta = requests.post(
+    respuesta = hacer_peticion_meraki("POST",
         f"{BASE_URL}/networks/{network_id}/groupPolicies",
         headers=crear_headers(),
         json=configuracion,
@@ -363,7 +429,7 @@ def actualizar_politica_grupo(
     Actualiza una Group Policy existente dentro de una Network.
     """
 
-    respuesta = requests.put(
+    respuesta = hacer_peticion_meraki("PUT",
         (f"{BASE_URL}/networks/{network_id}" f"/groupPolicies/{group_policy_id}"),
         headers=crear_headers(),
         json=configuracion,
@@ -386,7 +452,8 @@ def obtener_content_filtering(
     Obtiene todo el content filtering
     """
 
-    respuesta = requests.get(
+    respuesta = hacer_peticion_meraki(
+        "GET",
         f"{BASE_URL}/networks/{network_id}/appliance/contentFiltering",
         headers=crear_headers(),
         timeout=30,
@@ -405,7 +472,7 @@ def actualizar_content_filtering(
     Crea la configuracion de Content Filtering en una network
     """
 
-    respuesta = requests.put(
+    respuesta = hacer_peticion_meraki("PUT",
         f"{BASE_URL}/networks/{network_id}/appliance/contentFiltering",
         headers=crear_headers(),
         json=configuracion,
@@ -429,7 +496,8 @@ def obtener_vpn_exclusions_organizacion(
     de una organización
     """
 
-    respuesta = requests.get(
+    respuesta = hacer_peticion_meraki(
+        "GET",
         (
             f"{BASE_URL}/organizations/{organization_id}/appliance/trafficShaping/vpnExclusions/byNetwork"
         ),
@@ -449,7 +517,7 @@ def obtener_traffic_shaping_rules(
     Obtiene las Traffic Shaping Rules
     """
 
-    respuesta = requests.get(
+    respuesta = hacer_peticion_meraki("GET",
         (f"{BASE_URL}/networks/{network_id}/appliance/trafficShaping/rules"),
         headers=crear_headers(),
         timeout=30,
@@ -461,15 +529,14 @@ def obtener_traffic_shaping_rules(
 
 
 def actualizar_traffic_shaping_rules(
-        network_id: str,
-        configuracion: dict,
+    network_id: str,
+    configuracion: dict,
 ) -> dict:
-
     """
     Actualiza la configuraciond e traffic shaping rules de las networks seleccionadas
     """
 
-    respuesta = requests.put(
+    respuesta = hacer_peticion_meraki("PUT",
         f"{BASE_URL}/networks/{network_id}/appliance/trafficShaping/rules",
         headers=crear_headers(),
         json=configuracion,
@@ -482,15 +549,14 @@ def actualizar_traffic_shaping_rules(
 
 
 def actualizar_vpn_esclusions(
-        network_id: str,
-        configuracion: dict,
+    network_id: str,
+    configuracion: dict,
 ) -> dict:
-
     """
     Actualiza la configuracion de vpn exclussion en la network seleccionada
     """
 
-    respuesta = requests.put(
+    respuesta = hacer_peticion_meraki("PUT",
         f"{BASE_URL}/networks/{network_id}/appliance/trafficShaping/vpnExclusions",
         headers=crear_headers(),
         json=configuracion,
@@ -500,6 +566,7 @@ def actualizar_vpn_esclusions(
     respuesta.raise_for_status()
 
     return respuesta.json()
+
 
 #########
 # Busqueda de usaurios por ip
