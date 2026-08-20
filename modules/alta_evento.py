@@ -13,6 +13,7 @@ from meraki_api import (
     obtener_organizaciones,
     retirar_dispositivo_network,
 )
+from navegacion import input_menu
 
 
 def normalizar_serial(serial: str) -> str:
@@ -152,9 +153,9 @@ def crear_lista_equipos(
 
 
 def seleccionar_organizacion(
-        descripcion: str = "de destino",
+    descripcion: str = "de destino",
 ) -> dict:
-    
+
     organizaciones = obtener_organizaciones()
 
     if not organizaciones:
@@ -165,7 +166,7 @@ def seleccionar_organizacion(
     for indice, organizacion in enumerate(organizaciones, start=1):
         print(f"{indice}. {organizacion['name']}")
 
-    opcion = input(f"\nSelecciona una organización {descripcion}:\n> ").strip()
+    opcion = input_menu(f"\nSelecciona una organización {descripcion}:\n> ")
 
     if not opcion.isdigit():
         raise ValueError("Debes ingresar un número.")
@@ -179,8 +180,8 @@ def seleccionar_organizacion(
 
 
 def seleccionar_network(
-        organization_id: str,
-        descripcion: str = "de destino",
+    organization_id: str,
+    descripcion: str = "de destino",
 ) -> dict:
     networks = obtener_networks(organization_id)
 
@@ -194,7 +195,7 @@ def seleccionar_network(
     for indice, network in enumerate(networks, start=1):
         print(f"{indice}. {network['name']}")
 
-    opcion = input(f"\nSelecciona la Network {descripcion}:\n> ").strip()
+    opcion = input_menu(f"\nSelecciona la Network {descripcion}:\n> ")
 
     if not opcion.isdigit():
         raise ValueError("Debes ingresar un número.")
@@ -674,7 +675,7 @@ def alta_evento():
     print(f"\nOrganización: {organizacion['name']}")
     print(f"Network seleccionada: {network['name']}\n")
 
-    entrada_seriales = input("Ingresa los números de serie separados por comas:\n> ")
+    entrada_seriales = input_menu("Ingresa los números de serie separados por comas:\n> ")
 
     try:
         seriales = convertir_seriales(entrada_seriales)
@@ -687,13 +688,13 @@ def alta_evento():
         print("\nNo se ingresaron números de serie válidos.\n")
         return
 
-    nombre_base = input("Nombre base de los equipos:\n> ").strip().upper()
+    nombre_base = input_menu("Nombre base de los equipos:\n> ").upper()
 
     if not nombre_base:
         print("\nEl nombre base es obligatorio.\n")
         return
 
-    entrada_tags = input("Tags separados por comas:\n> ")
+    entrada_tags = input_menu("Tags separados por comas:\n> ")
 
     tags = [tag.strip() for tag in entrada_tags.split(",") if tag.strip()]
 
@@ -797,7 +798,7 @@ def alta_evento():
         "desde otras Networks y cambiar sus nombres y tags."
     )
 
-    confirmacion = input("\n¿Deseas continuar con el alta? (S/N):\n> ").strip().upper()
+    confirmacion = input_menu("\n¿Deseas continuar con el alta? (S/N):\n> ").upper()
 
     if confirmacion != "S":
         print("\nOperación cancelada. No se realizaron cambios.\n")

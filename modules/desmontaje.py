@@ -7,6 +7,7 @@ from meraki_api import (
     obtener_networks,
     obtener_organizaciones,
 )
+from navegacion import input_menu
 
 
 def normalizar_serial_desmontaje(serial: str) -> str:
@@ -63,7 +64,7 @@ def seleccionar_organizacion_desmontaje() -> dict:
     ):
         print(f"{indice}. {organizacion['name']}")
 
-    opcion = input("\nSelecciona una organización:\n> ").strip()
+    opcion = input_menu("\nSelecciona una organización:\n> ")
 
     if not opcion.isdigit():
         raise ValueError("Debes ingresar un número.")
@@ -95,7 +96,7 @@ def seleccionar_network_desmontaje(
     for indice, network in enumerate(networks, start=1):
         print(f"{indice}. {network['name']}")
 
-    opcion = input("\nSelecciona la Network del evento:\n> ").strip()
+    opcion = input_menu("\nSelecciona la Network del evento:\n> ")
 
     if not opcion.isdigit():
         raise ValueError("Debes ingresar un número.")
@@ -324,7 +325,7 @@ def desmontaje():
     print(f"\nOrganización: {organizacion['name']}")
     print(f"Network del evento: {network['name']}\n")
 
-    entrada_seriales = input(
+    entrada_seriales = input_menu(
         "Ingresa los seriales recuperados " "separados por comas:\n> "
     )
 
@@ -380,7 +381,7 @@ def desmontaje():
         print("\nSolo se modificarán los equipos mostrados " "como pendientes")
 
         confirmacion = (
-            input("\n¿Deseas marcar los pendientes como RECUPERADO? " "(S/N):\n> ").strip().upper()
+            input_menu("\n¿Deseas marcar los pendientes como RECUPERADO? " "(S/N):\n> ").upper()
         )
 
         if confirmacion != "S":
@@ -394,7 +395,7 @@ def desmontaje():
         print("\nDeseas modificar los equipos mostrados " "en otra network?")
     
         confirmacion = (
-            input("\n¿Deseas marcarlos como RECUPERADO? " "(S/N):\n> ").strip().upper()
+            input_menu("\n¿Deseas marcarlos como RECUPERADO? " "(S/N):\n> ").upper()
         )
     
         if confirmacion != "S":

@@ -19,6 +19,7 @@ from modules.alta_evento import (
     seleccionar_network,
     seleccionar_organizacion,
 )
+from navegacion import input_menu
 
 
 def identificar_tipo_equipo(modelo: str) -> str:
@@ -905,7 +906,7 @@ def alta_entre_organizaciones():
     print(f"\nOrganización destino: " f"{organizacion_destino['name']}")
     print(f"Network destino: " f"{network_destino['name']}\n")
 
-    entrada_seriales = input("Ingresa los seriales separados por comas:\n> ")
+    entrada_seriales = input_menu("Ingresa los seriales separados por comas:\n> ")
 
     try:
         seriales = convertir_seriales(entrada_seriales)
@@ -918,13 +919,13 @@ def alta_entre_organizaciones():
         print("\nNo se ingresaron seriales válidos.\n")
         return
 
-    nombre_base = input("Nombre base de los equipos:\n> ").strip().upper()
+    nombre_base = input_menu("Nombre base de los equipos:\n> ").upper()
 
     if not nombre_base:
         print("\nEl nombre base es obligatorio.\n")
         return
 
-    entrada_tags = input("Nuevos tags para equipos MR, " "separados por comas:\n> ")
+    entrada_tags = input_menu("Nuevos tags para equipos MR, " "separados por comas:\n> ")
 
     tags_nuevos = [tag.strip() for tag in entrada_tags.split(",") if tag.strip()]
 
@@ -989,10 +990,9 @@ def alta_entre_organizaciones():
         return
 
     confirmacion = (
-        input(
+        input_menu(
             "\n¿Confirmas el movimiento de los equipos " "MR y MS mostrados? (S/N):\n> "
         )
-        .strip()
         .upper()
     )
 

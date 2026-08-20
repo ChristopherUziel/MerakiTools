@@ -11,6 +11,7 @@ from meraki_api import (
     obtener_networks,
     obtener_organizaciones,
 )
+from navegacion import input_menu
 
 CARPETA_REPORTES = CARPETA_BASE / "reportes"
 
@@ -34,7 +35,7 @@ def seleccionar_organizacion_reporte() -> dict:
     ):
         print(f"{indice}. {organizacion['name']}")
 
-    opcion = input("\nSelecciona una organización:\n> ").strip()
+    opcion = input_menu("\nSelecciona una organización:\n> ")
 
     if not opcion.isdigit():
         raise ValueError("Debes ingresar un número.")
@@ -67,7 +68,7 @@ def seleccionar_network_reporte(
     for indice, network in enumerate(networks, start=1):
         print(f"{indice}. {network['name']}")
 
-    opcion = input("\nSelecciona una Network:\n> ").strip()
+    opcion = input_menu("\nSelecciona una Network:\n> ")
 
     if not opcion.isdigit():
         raise ValueError("Debes ingresar un número.")
@@ -427,7 +428,7 @@ def reportes():
         print("2. Reporte de desmontaje")
         print("3. Regresar al menú principal")
 
-        opcion = input("\nSelecciona una opción:\n> ").strip()
+        opcion = input_menu("\nSelecciona una opción:\n> ")
 
         if opcion == "1":
             ejecutar_reporte("alta")

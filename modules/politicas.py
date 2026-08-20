@@ -12,6 +12,7 @@ from modules.alta_evento import (
     seleccionar_network,
     seleccionar_organizacion,
 )
+from navegacion import input_menu
 
 
 def seleccionar_varios_elementos(
@@ -94,10 +95,10 @@ def seleccionar_politicas(
 
         print(f"{indice}. {nombre} " f"| ID: {policy_id}")
 
-    entrada = input(
+    entrada = input_menu(
         "\nSelecciona una o varias políticas "
         "separadas por comas, o escribe 'todas':\n> "
-    ).strip()
+    )
 
     if entrada.lower() == "todas":
         return politicas_ordenadas
@@ -207,7 +208,7 @@ def seleccionar_networks_destino(
     ):
         print(f"{indice}. " f"{organizacion.get('name', 'Sin nombre')}")
 
-    entrada = input(
+    entrada = input_menu(
         "\nSelecciona una o varias organizaciones "
         "separadas por comas, o escribe 'todas':\n> "
     )
@@ -261,7 +262,7 @@ def seleccionar_networks_destino(
         ):
             print(f"{indice}. " f"{network.get('name', 'Sin nombre')}")
 
-        entrada_networks = input(
+        entrada_networks = input_menu(
             "\nSelecciona una o varias Networks, " "'todas' o 'ninguna':\n> "
         )
 
@@ -461,9 +462,9 @@ def ejecutar_sincronizacion_politicas(
 
     print("\nSe realizarán " f"{len(resultados_con_cambios)} cambio(s).")
 
-    confirmacion = input(
+    confirmacion = input_menu(
         "\nEscribe CONFIRMAR para continuar (Debe ser en mayusculas):\n> "
-    ).strip()
+    )
 
     if confirmacion != "CONFIRMAR":
         print("\nOperación cancelada. " "No se realizaron cambios.\n")

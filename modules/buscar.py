@@ -6,7 +6,7 @@ from meraki_api import (
     obtener_networks,
     obtener_organizaciones,
 )
-
+from navegacion import input_menu
 
 def normalizar_serial_busqueda(serial: str) -> str:
     """
@@ -67,7 +67,7 @@ def seleccionar_organizacion_busqueda() -> dict:
     ):
         print(f"{indice}. {organizacion['name']}")
 
-    opcion = input("\nSelecciona una organización:\n> ").strip()
+    opcion = input_menu("\nSelecciona una organización:\n> ")
 
     if not opcion.isdigit():
         raise ValueError("Debes ingresar un número.")
@@ -473,7 +473,7 @@ def buscar():
         return
 
     while True:
-        entrada_seriales = input(
+        entrada_seriales = input_menu(
             "\nIngresa uno o varios seriales separados por comas:\n> "
         )
 
@@ -512,7 +512,7 @@ def buscar():
         except requests.RequestException as error:
             print("\nNo fue posible comunicarse con Meraki: " f"{error}\n")
 
-        continuar = input("\n¿Deseas buscar otro equipo? (S/N):\n> ").strip().upper()
+        continuar = input_menu("\n¿Deseas buscar otro equipo? (S/N):\n> ").upper()
 
         if continuar != "S":
             print("\nRegresando al menú principal...\n")
@@ -528,7 +528,7 @@ def buscar_todas_organizaciones():
     print("\n=== BUSCAR EQUIPO EN TODAS " "LAS ORGANIZACIONES ===\n")
 
     while True:
-        entrada_seriales = input(
+        entrada_seriales = input_menu(
             "\nIngresa uno o varios seriales " "separados por comas:\n> "
         )
 
@@ -559,9 +559,7 @@ def buscar_todas_organizaciones():
             print("\nNo fue posible comunicarse " f"con Meraki: {error}\n")
 
         continuar = (
-            input("\n¿Deseas realizar otra búsqueda global? " "(S/N):\n> ")
-            .strip()
-            .upper()
+            input_menu("\n¿Deseas realizar otra búsqueda global? " "(S/N):\n> ").upper()
         )
 
         if continuar != "S":

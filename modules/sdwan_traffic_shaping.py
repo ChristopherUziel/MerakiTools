@@ -10,15 +10,15 @@ from meraki_api import (
     actualizar_traffic_shaping_rules,
     actualizar_vpn_esclusions,
 )
-
 from modules.alta_evento import (
     seleccionar_network,
     seleccionar_organizacion,
 )
-
 from modules.politicas import (
     seleccionar_varios_elementos,
 )
+
+from navegacion import input_menu
 
 
 def sincronizar_sdwan_traffic_shaping() -> None:
@@ -171,7 +171,7 @@ def seleccionar_networks_destino_sdwan(
     ):
         print(f"{indice}. " f"{organizacion.get('name', 'Sin nombre')}")
 
-    entrada = input(
+    entrada = input_menu(
         "\nSelecciona una o varias organizaciones "
         "separadas por comas, o escribe 'todas':\n> "
     )
@@ -230,7 +230,7 @@ def seleccionar_networks_destino_sdwan(
         ):
             print(f"{indice}. " f"{network.get('name', 'Sin nombre')}")
 
-        entrada_networks = input(
+        entrada_networks = input_menu(
             "\nSelecciona una o varias Networks, " "'todas' o 'ninguna':\n> "
         )
 
@@ -476,7 +476,7 @@ def ejecutar_sincronizacion_sdwan(
         )
         return
 
-    confirmacion = input("\nEscribe CONFIRMAR para aplicar los cambios:\n> ").strip()
+    confirmacion = input_menu("\nEscribe CONFIRMAR para aplicar los cambios:\n> ")
 
     if confirmacion != "CONFIRMAR":
         print("\nOperación cancelada. " "No se realizaron cambios.\n")

@@ -6,6 +6,7 @@ from meraki_api import (
     obtener_detalle_cliente,
     obtener_organizaciones,
 )
+from navegacion import input_menu
 
 
 def buscar_cliente_global_mac(
@@ -218,7 +219,7 @@ def buscar_clientes() -> None:
     print(" BÚSQUEDA GLOBAL DE CLIENTES POR MAC")
     print("=" * 50)
 
-    mac_ingresada = input("\nIngresa la MAC del cliente:\n> ").strip()
+    mac_ingresada = input_menu("\nIngresa la MAC del cliente:\n> ")
 
     mac = validar_y_normalizar_mac(mac_ingresada)
 

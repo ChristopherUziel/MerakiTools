@@ -12,7 +12,7 @@ from config import configurar_api_key_si_es_necesario
 from modules.politicas import sincronizar_politicas
 
 ##imports de modulo content filtering
-from modules.content_filtering import(
+from modules.content_filtering import (
     sincronizar_content_filtering,
 )
 
@@ -22,10 +22,12 @@ from modules.sdwan_traffic_shaping import sincronizar_sdwan_traffic_shaping
 ## import modulo busqueda de cliente
 from modules.buscar_clientes import buscar_clientes
 
+##import para anvegacion a menu
+from navegacion import VolverMenuPrincipal
+
 __author__ = "Christopher Uziel Martinez Alvarez"
 __project__ = "MerakiTools"
 __version__ = "1.0"
-
 
 
 def mostrar_menu():
@@ -70,42 +72,46 @@ def main():
 
         opcion = input("Selecciona una opción: ")
 
-        if opcion == "1":
-            alta_evento()
+        try:
+            if opcion == "1":
+                alta_evento()
 
-        elif opcion == "2":
-            alta_entre_organizaciones()
+            elif opcion == "2":
+                alta_entre_organizaciones()
 
-        elif opcion == "3":
-            desmontaje()
+            elif opcion == "3":
+                desmontaje()
 
-        elif opcion == "4":
-            buscar()
+            elif opcion == "4":
+                buscar()
 
-        elif opcion == "5":
-            buscar_todas_organizaciones()
+            elif opcion == "5":
+                buscar_todas_organizaciones()
 
-        elif opcion == "6":
-            buscar_clientes()
+            elif opcion == "6":
+                buscar_clientes()
 
-        elif opcion == "7":
-            sincronizar_politicas()
+            elif opcion == "7":
+                sincronizar_politicas()
 
-        elif opcion == "8":
-            sincronizar_sdwan_traffic_shaping()
+            elif opcion == "8":
+                sincronizar_sdwan_traffic_shaping()
 
-        elif opcion == "9":
-            sincronizar_content_filtering()
+            elif opcion == "9":
+                sincronizar_content_filtering()
 
-        elif opcion == "10":
-            reportes()
+            elif opcion == "10":
+                reportes()
 
-        elif opcion == "11":
-            print("\n¡Hasta luego!")
-            break
+            elif opcion == "11":
+                print("\n¡Hasta luego!")
+                break
 
-        else:
-            print("\nOpción inválida.")
+            else:
+                print("\nOpción inválida.")
+
+        except VolverMenuPrincipal:
+            print("\nRegresando al menu principal...\n")
 
 
 if __name__ == "__main__":
