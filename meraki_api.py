@@ -37,8 +37,6 @@ def hacer_peticion_meraki(
     Realiza peticion a la API Meraki
 
     Si Meraki responde con HTTP 429 (de limite de peticiones por segundo)
-    Los demás códigos HTTP se devuelven normalmente
-    para que raise_for_status() los maneje.
     """
 
     ultima_respuesta = None
@@ -157,7 +155,8 @@ def liberar_dispositivos_organizacion(
     Antes de llamarla, primero se tienen que retirar de su network actual
     """
 
-    respuesta = hacer_peticion_meraki("POST",
+    respuesta = hacer_peticion_meraki(
+        "POST",
         (f"{BASE_URL}/organizations/" f"{organization_id}/inventory/release"),
         headers=crear_headers(),
         json={
@@ -179,7 +178,8 @@ def reclamar_dispositivos_organizacion(
     Reclama dispositivos dentre del inventario de la organizacion destino
     """
 
-    respuesta = hacer_peticion_meraki("POST",
+    respuesta = hacer_peticion_meraki(
+        "POST",
         (f"{BASE_URL}/organizations/" f"{organization_id}/inventory/claim"),
         headers=crear_headers(),
         json={
@@ -202,7 +202,8 @@ def retirar_dispositivo_network(
     en el inventario de la organización.
     """
 
-    respuesta = hacer_peticion_meraki("POST",
+    respuesta = hacer_peticion_meraki(
+        "POST",
         f"{BASE_URL}/networks/{network_id}/devices/remove",
         headers=crear_headers(),
         json={
@@ -225,7 +226,8 @@ def agregar_dispositivos_network(
     los equipos o no agregar ninguno.
     """
 
-    respuesta = hacer_peticion_meraki("POST",
+    respuesta = hacer_peticion_meraki(
+        "POST",
         f"{BASE_URL}/networks/{network_id}/devices/claim",
         headers=crear_headers(),
         params={
@@ -268,7 +270,8 @@ def actualizar_dispositivo(
     Actualiza el nombre y los tags de un dispositivo.
     """
 
-    respuesta = hacer_peticion_meraki("PUT",
+    respuesta = hacer_peticion_meraki(
+        "PUT",
         f"{BASE_URL}/devices/{serial}",
         headers=crear_headers(),
         json={
@@ -293,7 +296,8 @@ def actualizar_nombre_dispositivo(
     sin modificar sus tags ni otras propiedades.
     """
 
-    respuesta = hacer_peticion_meraki("PUT",
+    respuesta = hacer_peticion_meraki(
+        "PUT",
         f"{BASE_URL}/devices/{serial}",
         headers=crear_headers(),
         json={
@@ -408,7 +412,8 @@ def crear_politica_grupo(
     de la política que se desea crear.
     """
 
-    respuesta = hacer_peticion_meraki("POST",
+    respuesta = hacer_peticion_meraki(
+        "POST",
         f"{BASE_URL}/networks/{network_id}/groupPolicies",
         headers=crear_headers(),
         json=configuracion,
@@ -429,7 +434,8 @@ def actualizar_politica_grupo(
     Actualiza una Group Policy existente dentro de una Network.
     """
 
-    respuesta = hacer_peticion_meraki("PUT",
+    respuesta = hacer_peticion_meraki(
+        "PUT",
         (f"{BASE_URL}/networks/{network_id}" f"/groupPolicies/{group_policy_id}"),
         headers=crear_headers(),
         json=configuracion,
@@ -472,7 +478,8 @@ def actualizar_content_filtering(
     Crea la configuracion de Content Filtering en una network
     """
 
-    respuesta = hacer_peticion_meraki("PUT",
+    respuesta = hacer_peticion_meraki(
+        "PUT",
         f"{BASE_URL}/networks/{network_id}/appliance/contentFiltering",
         headers=crear_headers(),
         json=configuracion,
@@ -517,7 +524,8 @@ def obtener_traffic_shaping_rules(
     Obtiene las Traffic Shaping Rules
     """
 
-    respuesta = hacer_peticion_meraki("GET",
+    respuesta = hacer_peticion_meraki(
+        "GET",
         (f"{BASE_URL}/networks/{network_id}/appliance/trafficShaping/rules"),
         headers=crear_headers(),
         timeout=30,
@@ -536,7 +544,8 @@ def actualizar_traffic_shaping_rules(
     Actualiza la configuraciond e traffic shaping rules de las networks seleccionadas
     """
 
-    respuesta = hacer_peticion_meraki("PUT",
+    respuesta = hacer_peticion_meraki(
+        "PUT",
         f"{BASE_URL}/networks/{network_id}/appliance/trafficShaping/rules",
         headers=crear_headers(),
         json=configuracion,
@@ -556,7 +565,8 @@ def actualizar_vpn_esclusions(
     Actualiza la configuracion de vpn exclussion en la network seleccionada
     """
 
-    respuesta = hacer_peticion_meraki("PUT",
+    respuesta = hacer_peticion_meraki(
+        "PUT",
         f"{BASE_URL}/networks/{network_id}/appliance/trafficShaping/vpnExclusions",
         headers=crear_headers(),
         json=configuracion,
@@ -570,6 +580,139 @@ def actualizar_vpn_esclusions(
 
 #########
 # Busqueda de usaurios por ip
+
+
+def obtener_clientes_network(
+    network_id: str,
+    timespan: int,
+    mac: str | None = None,
+    ip: str | None = None,
+    descripcion: str | None = None,
+) -> list[dict]:
+    """
+    Obtiene clientes vistos en una Network durante
+    el período indicado.
+
+    Permite filtrar por MAC, IP o descripción.
+    """
+
+    parametros = {
+        "timespan": timespan,
+        "perPage": 100,
+    }
+
+    if mac:
+        parametros["mac"] = mac
+
+    if ip:
+        parametros["ip"] = ip
+
+    if descripcion:
+        parametros["description"] = descripcion
+
+    respuesta = hacer_peticion_meraki(
+        "GET",
+        f"{BASE_URL}/networks/{network_id}/clients",
+        headers=crear_headers(),
+        params=parametros,
+        timeout=90,
+    )
+
+    respuesta.raise_for_status()
+
+    return respuesta.json()
+
+
+def obtener_detalle_cliente(
+    network_id: str,
+    client_id: str,
+) -> dict:
+    """
+    Obtiene información detallada de un cliente
+    localizado dentro de una Network.
+    """
+
+    respuesta = hacer_peticion_meraki(
+        "GET",
+        (f"{BASE_URL}/networks/{network_id}" f"/clients/{client_id}"),
+        headers=crear_headers(),
+        timeout=30,
+    )
+
+    respuesta.raise_for_status()
+
+    return respuesta.json()
+
+
+def buscar_clientes_organizacion_por_mac(
+    organization_id: str,
+    mac: str,
+) -> dict | None:
+    """
+    Busca una MAC en una organización y devuelve
+    todos los registros históricos disponibles
+
+    Maneja paginación y organizaciones donde
+    la MAC no tenga registros.
+    """
+
+    url = f"{BASE_URL}/organizations/{organization_id}/clients/search"
+
+    parametros = {
+        "mac": mac,
+        "perPage": 5,
+    }
+
+    datos_cliente = None
+    registros = []
+
+    while url:
+        respuesta = hacer_peticion_meraki(
+            "GET",
+            url,
+            headers=crear_headers(),
+            params=parametros,
+            timeout=60,
+        )
+
+        # Si no existe información para esa MAC en esta org
+        if respuesta.status_code == 204:
+            return None
+
+        respuesta.raise_for_status()
+
+        # Evita intentar convertir una lista vacia
+        if not respuesta.text.strip():
+            return None
+
+        datos = respuesta.json()
+
+        if datos_cliente is None:
+            datos_cliente = {
+                "clientId": datos.get("clientId"),
+                "mac": datos.get("mac"),
+                "manufacturer": datos.get("manufacturer"),
+            }
+
+        registros.extend(datos.get("records", []))
+
+        siguiente = respuesta.links.get("next")
+
+        if siguiente:
+            url = siguiente["url"]
+
+            # La siguiente URL ya contiene los parámetros
+            # de paginación necesarios.
+            parametros = None
+        else:
+            url = None
+
+    if datos_cliente is None or not registros:
+        return None
+
+    datos_cliente["records"] = registros
+
+    return datos_cliente
 
 
 def inicializar():

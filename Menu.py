@@ -19,6 +19,9 @@ from modules.content_filtering import(
 ## imports modulo traffic shaping
 from modules.sdwan_traffic_shaping import sincronizar_sdwan_traffic_shaping
 
+## import modulo busqueda de cliente
+from modules.buscar_clientes import buscar_clientes
+
 __author__ = "Christopher Uziel Martinez Alvarez"
 __project__ = "MerakiTools"
 __version__ = "1.0"
@@ -41,11 +44,12 @@ def mostrar_menu():
     print("3. Desmontaje")
     print("4. Buscar Equipo en una Organización")
     print("5. Buscar Equipo en todas las Organizaciones")
-    print("6. Sincronizar Group Policies")
-    print("7. Sincronizar SD-WAN & Traffic shaping")
-    print("8. Sincronizar Content Filtering")
-    print("9. Reportes")
-    print("10. Salir")
+    print("6. Buscar Cliente en todas las Organizaciones")
+    print("7. Sincronizar Group Policies")
+    print("8. Sincronizar SD-WAN & Traffic shaping")
+    print("9. Sincronizar Content Filtering")
+    print("10. Reportes")
+    print("11. Salir")
     print("=" * 40)
 
 
@@ -82,18 +86,21 @@ def main():
             buscar_todas_organizaciones()
 
         elif opcion == "6":
-            sincronizar_politicas()
+            buscar_clientes()
 
         elif opcion == "7":
-            sincronizar_sdwan_traffic_shaping()
+            sincronizar_politicas()
 
         elif opcion == "8":
-            sincronizar_content_filtering()
+            sincronizar_sdwan_traffic_shaping()
 
         elif opcion == "9":
-            reportes()
+            sincronizar_content_filtering()
 
         elif opcion == "10":
+            reportes()
+
+        elif opcion == "11":
             print("\n¡Hasta luego!")
             break
 
