@@ -579,7 +579,7 @@ def actualizar_vpn_esclusions(
 
 
 #########
-# Busqueda de usaurios por ip
+# Busqueda de usaurios por ip y MAC
 
 
 def obtener_clientes_network(

@@ -5,8 +5,68 @@ from meraki_api import (
     buscar_clientes_organizacion_por_mac,
     obtener_detalle_cliente,
     obtener_organizaciones,
+    obtener_clientes_network,
+    obtener_networks,
 )
 from navegacion import input_menu
+import ipaddress
+
+
+def validar_ip(ip: str) -> str | None:
+    """
+    Valida una dirección IPv4
+    """
+
+    ip = ip.strip()
+
+    try:
+        direccion = ipaddress.ip_address(ip)
+
+        if direccion.version != 4:
+            return None
+
+        return str(direccion)
+
+    except ValueError:
+        return None
+
+
+def seleccionar_periodo_busqueda() -> int:
+    """
+    Selecciona en que periodo de tiempo se buscara la IP
+    """
+
+    opciones = {
+        "1": {
+            "nombre": "Últimas 2 horas",
+            "segundos": 7200,
+        },
+        "2": {
+            "nombre": "Último día",
+            "segundos": 86400,
+        },
+        "3": {
+            "nombre": "Última semana",
+            "segundos": 604800,
+        },
+        "4": {
+            "nombre": "Último mes",
+            "segundos": 2678400,
+        },
+    }
+
+    print("\nPeriodo de búsqueda:\n")
+
+    for numero, datos in opciones.items():
+        print(f"{numero}. {datos['nombre']}")
+
+    while True:
+        opcion = input_menu("\nSelecciona un periodo:\n> ")
+
+        if opcion in opciones:
+            return opciones[opcion]["segundos"]
+
+        print("\nOpción no válida.")
 
 
 def buscar_cliente_global_mac(
@@ -159,19 +219,12 @@ def mostrar_cliente_encontrado(
 
     print(f"Estado: " f"{detalle.get('status', 'Desconocido')}")
 
-    last_seen = convertir_last_seen(
-        detalle.get("lastSeen")
-    )
+    last_seen = convertir_last_seen(detalle.get("lastSeen"))
 
     if last_seen:
-        print(
-            "Ultima vez visto: "
-            f"{last_seen.strftime('%d/%m/%y %H:%M:%S')}"
-        )
+        print("Ultima vez visto: " f"{last_seen.strftime('%d/%m/%y %H:%M:%S')}")
     else:
-        print(
-            "Ulrima vez visto: No disponible"
-        )
+        print("Ulrima vez visto: No disponible")
 
     print(f"IP: " f"{detalle.get('ip', 'No disponible')}")
 
@@ -210,24 +263,180 @@ def mostrar_cliente_encontrado(
     )
 
 
+def buscar_cliente_global_ip(
+    ip: str,
+    timespan: int,
+) -> list[dict]:
+    """
+    Busca una IP en todas las Networks
+    """
+
+    resultados = []
+
+    organizaciones = obtener_organizaciones()
+
+    for organizacion in organizaciones:
+        organization_id = organizacion["id"]
+        organization_name = organizacion.get(
+            "name",
+            "Sin nombre",
+        )
+
+        print(f"\nBuscando en organización: " f"{organization_name}")
+
+        try:
+            networks = obtener_networks(organization_id)
+
+        except requests.RequestException as error:
+            print(f"⚠ No fue posible consultar " f"{organization_name}: {error}")
+            continue
+
+        for network in networks:
+            product_types = network.get(
+                "productTypes",
+                [],
+            )
+
+            if not any(
+                producto in product_types
+                for producto in (
+                    "appliance",
+                    "switch",
+                    "wireless",
+                )
+            ):
+                continue
+
+            network_id = network["id"]
+            network_name = network.get(
+                "name",
+                "Sin nombre",
+            )
+
+            clientes = None
+
+            # Dos intentos para Networks lentas.
+            for intento in range(1, 3):
+                try:
+                    clientes = obtener_clientes_network(
+                        network_id=network_id,
+                        timespan=timespan,
+                        ip=ip,
+                    )
+
+                    break
+
+                except requests.Timeout:
+                    if intento < 2:
+                        print(
+                            f"⚠ {organization_name} | "
+                            f"{network_name} tardó demasiado "
+                            "en responder. Reintentando..."
+                        )
+
+                    else:
+                        print(
+                            f"⚠ Se omitió "
+                            f"{organization_name} | "
+                            f"{network_name}: "
+                            "tiempo de espera agotado."
+                        )
+
+                except requests.HTTPError:
+                    break
+
+                except requests.RequestException as error:
+                    print(
+                        f"⚠ Error consultando "
+                        f"{organization_name} | "
+                        f"{network_name}: {error}"
+                    )
+                    break
+
+            if not clientes:
+                continue
+
+            for cliente in clientes:
+                client_id = cliente.get("id")
+
+                detalle = cliente
+
+                if client_id:
+                    try:
+                        detalle = obtener_detalle_cliente(
+                            network_id=network_id,
+                            client_id=client_id,
+                        )
+
+                    except requests.RequestException:
+                        detalle = cliente
+
+                resultados.append(
+                    {
+                        "organization_name": organization_name,
+                        "network_name": network_name,
+                        "detalle": detalle,
+                    }
+                )
+
+    return resultados
+
+
 def buscar_clientes() -> None:
     """
-    Busca globalmente un cliente por MAC
+    Permite buscar globalmente un cliente por MAC o IP
     """
 
     print("\n" + "=" * 50)
-    print(" BÚSQUEDA GLOBAL DE CLIENTES POR MAC")
+    print(" BÚSQUEDA GLOBAL DE CLIENTES")
     print("=" * 50)
 
-    mac_ingresada = input_menu("\nIngresa la MAC del cliente:\n> ")
+    print("\nBuscar cliente por:\n")
+    print("1. MAC")
+    print("2. IP")
 
-    mac = validar_y_normalizar_mac(mac_ingresada)
+    opcion = input_menu("\nSelecciona una opción:\n> ")
 
-    if mac is None:
-        print("\nMAC inválida o incompleta. Usa el formato aa:bb:cc:dd:ee:ff.\n")
+    ############
+    # BÚSQUEDA POR MAC
+
+    if opcion == "1":
+        mac_ingresada = input_menu("\nIngresa la MAC del cliente:\n> ")
+
+        mac = validar_y_normalizar_mac(mac_ingresada)
+
+        if mac is None:
+            print("\nMAC inválida o incompleta. " "Usa el formato aa:bb:cc:dd:ee:ff.\n")
+            return
+
+        resultados = buscar_cliente_global_mac(mac)
+
+    ##################
+    # BÚSQUEDA POR IP
+
+
+    elif opcion == "2":
+        ip_ingresada = input_menu("\nIngresa la IP del cliente:\n> ")
+
+        ip = validar_ip(ip_ingresada)
+
+        if ip is None:
+            print("\nDirección IP inválida.\n")
+            return
+
+        timespan = seleccionar_periodo_busqueda()
+
+        resultados = buscar_cliente_global_ip(
+            ip=ip,
+            timespan=timespan,
+        )
+
+    else:
+        print("\nOpción no válida.\n")
         return
 
-    resultados = buscar_cliente_global_mac(mac)
+    ####################
+    # RESULTADOS
 
     if not resultados:
         print("\nNo se encontró el cliente.\n")

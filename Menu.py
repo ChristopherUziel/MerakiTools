@@ -12,7 +12,7 @@ from config import configurar_api_key_si_es_necesario
 from modules.politicas import sincronizar_politicas
 
 ##imports de modulo content filtering
-from modules.content_filtering import (
+from modules.content_filtering import(
     sincronizar_content_filtering,
 )
 
@@ -33,7 +33,11 @@ __version__ = "1.0"
 def mostrar_menu():
 
     arte_ascii = """
-        OCESA
+     ###   ###  #####  ####  ###  
+    #   # #     #     #     #   # 
+    #   # #     ####   ###  ##### 
+    #   # #     #         # #   # 
+     ###   ###  ##### ####  #   # 
     """
 
     print("\n" + "=" * 40)
