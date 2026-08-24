@@ -12,7 +12,7 @@ from navegacion import input_menu
 
 def normalizar_serial_desmontaje(serial: str) -> str:
 
-    serial_limpio = serial.strip().upper().replace("-", "")
+    serial_limpio = serial.strip().upper().replace("-", "").replace("'","")
 
     if len(serial_limpio) != 12:
         raise ValueError(f"El serial '{serial}' no tiene 12 caracteres.")

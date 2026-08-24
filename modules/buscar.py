@@ -13,7 +13,7 @@ def normalizar_serial_busqueda(serial: str) -> str:
     Normaliza la serie del equipo
     """
 
-    serial_limpio = serial.strip().upper().replace("-", "")
+    serial_limpio = serial.strip().upper().replace("-", "").replace("'","")
 
     if len(serial_limpio) != 12:
         raise ValueError("El serial debe contener 12 caracteres.")

@@ -21,7 +21,7 @@ def normalizar_serial(serial: str) -> str:
     Normaliza el numero de serie al formato estandar
     """
 
-    serial_limpio = serial.strip().upper().replace("-", "")
+    serial_limpio = serial.strip().upper().replace("-", "").replace("'","")
 
     if len(serial_limpio) != 12:
         raise ValueError(f"El serial '{serial}' no tiene 12 caracteres.")
