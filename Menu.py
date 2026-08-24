@@ -1,4 +1,7 @@
-from meraki_api import inicializar
+from meraki_api import (
+    inicializar,
+    obtener_identidad_actual,
+)
 from modules.alta_evento import alta_evento
 from modules.alta_entre_organizaciones import (
     alta_entre_organizaciones,
@@ -24,6 +27,14 @@ from modules.buscar_clientes import buscar_clientes
 
 ##import para anvegacion a menu
 from navegacion import VolverMenuPrincipal
+
+##import auditoria
+from auditoria import (
+    establecer_usuario_auditoria,
+    registrar_auditoria,
+    preparar_control_cierre,
+    registrar_cierre_sesion,
+)
 
 __author__ = "Christopher Uziel Martinez Alvarez"
 __project__ = "MerakiTools"
@@ -64,6 +75,26 @@ def main():
     try:
         configurar_api_key_si_es_necesario()
         inicializar()
+
+        identidad = obtener_identidad_actual()
+
+        usuario_actual = (
+            identidad.get("email") 
+            or identidad.get("name") 
+            or "Usuario desconocido"
+        )
+
+        establecer_usuario_auditoria(
+            usuario_actual
+        )
+
+        preparar_control_cierre()
+
+        registrar_auditoria(
+            modulo="Sistema",
+            accion="Inicio de sesión",
+            resultado="Correcto",
+        )
 
     except ValueError as error:
         print(f"\nError de configuración: {error}\n")
@@ -119,6 +150,11 @@ def main():
                 reportes()
 
             elif opcion == "11":
+
+                registrar_cierre_sesion(
+                    "Salida desde el menú principal"
+                )
+
                 print("\n¡Hasta luego!")
                 break
 

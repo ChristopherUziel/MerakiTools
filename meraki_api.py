@@ -715,6 +715,26 @@ def buscar_clientes_organizacion_por_mac(
     return datos_cliente
 
 
+##########
+#Auditoria
+
+def obtener_identidad_actual() -> dict:
+    """
+    Obtiene la identidad de usuario en meraki asociada a la API Key
+    """
+
+    respuesta = hacer_peticion_meraki(
+        "GET",
+        f"{BASE_URL}/administered/identities/me",
+        headers = crear_headers(),
+        timeout= 20,
+    )
+
+    respuesta.raise_for_status()
+
+    return respuesta.json()
+
+
 def inicializar():
     print("\n=================================")
     print(" Inicializando Cisco Meraki API")

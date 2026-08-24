@@ -13,6 +13,7 @@ from modules.alta_evento import (
     seleccionar_organizacion,
 )
 from navegacion import input_menu
+from auditoria import registrar_auditoria
 
 
 def seleccionar_varios_elementos(
@@ -437,6 +438,8 @@ def mostrar_analisis_politicas(
 
 def ejecutar_sincronizacion_politicas(
     resultados: list[dict],
+    organizacion_modelo: str,
+    network_modelo: str,
 ) -> None:
     """
     Ejecuta las acciones obtenidas durante el análisis:
@@ -516,6 +519,16 @@ def ejecutar_sincronizacion_politicas(
             )
 
             print(f"○ {organizacion} | {network} | " f"{politica} → Sin cambios")
+
+            registrar_auditoria(
+                modulo="Group Policies",
+                accion="Comparar política con modelo",
+                organizacion=organizacion,
+                network=network,
+                objetivo=politica,
+                resultado="Sin cambios",
+                detalle=(f"Modelo: {organizacion_modelo} | " f"{network_modelo}"),
+            )
             continue
 
         try:
@@ -536,6 +549,16 @@ def ejecutar_sincronizacion_politicas(
 
                 print(f"✓ {organizacion} | {network} | " f"{politica} → Creada")
 
+                registrar_auditoria(
+                    modulo="Group Policies",
+                    accion="Crear política desde modelo",
+                    organizacion=organizacion,
+                    network=network,
+                    objetivo=politica,
+                    resultado="Correcto",
+                    detalle=(f"Modelo: {organizacion_modelo} | " f"{network_modelo}"),
+                )
+
             elif accion == "Actualizar":
                 actualizar_politica_grupo(
                     network_id=resultado["network_id"],
@@ -554,6 +577,16 @@ def ejecutar_sincronizacion_politicas(
 
                 print(f"✓ {organizacion} | {network} | " f"{politica} → Actualizada")
 
+                registrar_auditoria(
+                    modulo="Group Policies",
+                    accion="Actualizar política desde modelo",
+                    organizacion=organizacion,
+                    network=network,
+                    objetivo=politica,
+                    resultado="Correcto",
+                    detalle=(f"Modelo: {organizacion_modelo} | " f"{network_modelo}"),
+                )
+
         except requests.HTTPError as error:
             errores += 1
 
@@ -569,6 +602,20 @@ def ejecutar_sincronizacion_politicas(
             print(f"✗ {organizacion} | {network} | " f"{politica} → Error")
             print(f"  Detalle: {detalle}")
 
+            registrar_auditoria(
+                modulo="Group Policies",
+                accion=f"{accion} política desde modelo",
+                organizacion=organizacion,
+                network=network,
+                objetivo=politica,
+                resultado="Error",
+                detalle=(
+                    f"Modelo: {organizacion_modelo} | "
+                    f"{network_modelo} | "
+                    f"Error: {detalle}"
+                ),
+            )
+
         except requests.RequestException as error:
             errores += 1
 
@@ -581,6 +628,20 @@ def ejecutar_sincronizacion_politicas(
 
             print(f"✗ {organizacion} | {network} | " f"{politica} → Error de conexión")
             print(f"  Detalle: {error}")
+
+            registrar_auditoria(
+                modulo="Group Policies",
+                accion=f"{accion} política desde modelo",
+                organizacion=organizacion,
+                network=network,
+                objetivo=politica,
+                resultado="Error",
+                detalle=(
+                    f"Modelo: {organizacion_modelo} | "
+                    f"{network_modelo} | "
+                    f"Error de conexión: {error}"
+                ),
+            )
 
     print("\n=== RESULTADO FINAL ===\n")
     print(f"- Creadas: {creadas}")
@@ -619,7 +680,7 @@ def ejecutar_sincronizacion_politicas(
 
         print()
 
-    #Resumen de networks
+    # Resumen de networks
     print("Resumen de Networks:")
     print(f"- Actualizadas completamente: " f"{networks_completas}")
     print(f"- Con políticas omitidas: " f"{networks_parciales}")
@@ -668,7 +729,11 @@ def sincronizar_politicas() -> None:
 
         mostrar_analisis_politicas(resultados)
 
-        ejecutar_sincronizacion_politicas(resultados)
+        ejecutar_sincronizacion_politicas(
+            resultados=resultados,
+            organizacion_modelo=organizacion_modelo["name"],
+            network_modelo=network_modelo["name"],
+        )
 
     except ValueError as error:
         print(f"\nError de selección: {error}\n")

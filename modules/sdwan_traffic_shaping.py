@@ -19,6 +19,7 @@ from modules.politicas import (
 )
 
 from navegacion import input_menu
+from auditoria import registrar_auditoria
 
 
 def sincronizar_sdwan_traffic_shaping() -> None:
@@ -105,7 +106,11 @@ def sincronizar_sdwan_traffic_shaping() -> None:
 
     mostrar_analisis_sdwan(resultados)
 
-    ejecutar_sincronizacion_sdwan(resultados)
+    ejecutar_sincronizacion_sdwan(
+        resultados=resultados,
+        organizacion_modelo=organizacion_modelo["name"],
+        network_modelo=network_modelo["name"],
+    )
 
 
 def preparar_vpn_exclusion(
@@ -453,6 +458,8 @@ def mostrar_analisis_sdwan(
 
 def ejecutar_sincronizacion_sdwan(
     resultados: list[dict],
+    organizacion_modelo: str,
+    network_modelo: str,
 ) -> None:
     """
     Ejecuta la sincronizació de traffic shaping y vpn exlclusions
@@ -523,6 +530,27 @@ def ejecutar_sincronizacion_sdwan(
 
                 print("✓ Traffic Shaping Rules → Actualizadas")
 
+                cantidad_reglas = len(
+                    traffic["configuracion"].get(
+                        "rules",
+                        [],
+                    )
+                )
+
+                registrar_auditoria(
+                    modulo="SD-WAN / Traffic Shaping",
+                    accion="Sincronizar Traffic Shaping Rules",
+                    organizacion=organizacion,
+                    network=network,
+                    objetivo="Traffic Shaping Rules",
+                    resultado="Correcto",
+                    detalle=(
+                        f"Modelo: {organizacion_modelo} | "
+                        f"{network_modelo} | "
+                        f"Reglas copiadas: {cantidad_reglas}"
+                    ),
+                )
+
                 resumen_networks[network_id]["traffic_shaping"][
                     "estado"
                 ] = "Actualizada"
@@ -535,6 +563,20 @@ def ejecutar_sincronizacion_sdwan(
                 print("✗ Traffic Shaping Rules → Error")
                 print(f"Motivo: {detalle}")
 
+                registrar_auditoria(
+                    modulo="SD-WAN / Traffic Shaping",
+                    accion="Sincronizar Traffic Shaping Rules",
+                    organizacion=organizacion,
+                    network=network,
+                    objetivo="Traffic Shaping Rules",
+                    resultado="Error",
+                    detalle=(
+                        f"Modelo: {organizacion_modelo} | "
+                        f"{network_modelo} | "
+                        f"Error: {detalle}"
+                    ),
+                )
+
                 resumen_networks[network_id]["traffic_shaping"]["estado"] = "Error"
                 resumen_networks[network_id]["traffic_shaping"]["motivo"] = detalle
 
@@ -543,10 +585,36 @@ def ejecutar_sincronizacion_sdwan(
                 print("  ✗ Traffic Shaping Rules → Error")
                 print(f"    Motivo: {error}")
 
+                registrar_auditoria(
+                    modulo="SD-WAN / Traffic Shaping",
+                    accion="Sincronizar Traffic Shaping Rules",
+                    organizacion=organizacion,
+                    network=network,
+                    objetivo="Traffic Shaping Rules",
+                    resultado="Error",
+                    detalle=(
+                        f"Modelo: {organizacion_modelo} | "
+                        f"{network_modelo} | "
+                        f"Error de conexión: {error}"
+                    ),
+                )
+
         elif traffic["accion"] == "Sin cambios":
             print("  ○  Traffic Shaping Rules → Sin cambios")
 
             resumen_networks[network_id]["traffic_shaping"]["estado"] = "Sin cambios"
+
+            ##auditoria
+            registrar_auditoria(
+                modulo="SD-WAN / Traffic Shaping",
+                accion="Comparar Traffic Shaping Rules",
+                organizacion=organizacion,
+                network=network,
+                objetivo="Traffic Shaping Rules",
+                resultado="Sin cambios",
+                detalle=(f"Modelo: {organizacion_modelo} | " f"{network_modelo}"),
+            )
+            ####
 
         elif traffic["accion"] == "Omitir":
             print("  ⚠ Traffic Shaping Rules → Omitidas ")
@@ -554,6 +622,21 @@ def ejecutar_sincronizacion_sdwan(
             resumen_networks[network_id]["traffic_shaping"]["estado"] = "Omitida"
             resumen_networks[network_id]["traffic_shaping"]["motivo"] = traffic.get(
                 "motivo"
+            )
+
+            #### Auditoria
+            registrar_auditoria(
+                modulo="SD-WAN / Traffic Shaping",
+                accion="Sincronizar Traffic Shaping Rules",
+                organizacion=organizacion,
+                network=network,
+                objetivo="Traffic Shaping Rules",
+                resultado="Omitido",
+                detalle=(
+                    f"Modelo: {organizacion_modelo} | "
+                    f"{network_modelo} | "
+                    f"Motivo: {traffic.get('motivo', 'No disponible')}"
+                ),
             )
 
             if traffic.get("motivo"):
@@ -573,6 +656,39 @@ def ejecutar_sincronizacion_sdwan(
 
                 resumen_networks[network_id]["vpn_exclusions"]["estado"] = "Actualizada"
 
+                ##auditoria
+                configuracion_vpn = vpn["configuracion"]
+
+                cantidad_custom = len(
+                    configuracion_vpn.get(
+                        "custom",
+                        [],
+                    )
+                )
+
+                cantidad_aplicaciones = len(
+                    configuracion_vpn.get(
+                        "majorApplications",
+                        [],
+                    )
+                )
+
+                registrar_auditoria(
+                    modulo="SD-WAN / Traffic Shaping",
+                    accion="Sincronizar VPN Exclusions",
+                    organizacion=organizacion,
+                    network=network,
+                    objetivo="VPN Exclusions",
+                    resultado="Correcto",
+                    detalle=(
+                        f"Modelo: {organizacion_modelo} | "
+                        f"{network_modelo} | "
+                        f"Custom: {cantidad_custom} | "
+                        f"Major Applications: {cantidad_aplicaciones}"
+                    ),
+                )
+                ###
+
             except requests.HTTPError as error:
                 detalle = (
                     error.response.text if error.response is not None else str(error)
@@ -584,21 +700,77 @@ def ejecutar_sincronizacion_sdwan(
                 resumen_networks[network_id]["vpn_exclusions"]["estado"] = "Error"
                 resumen_networks[network_id]["vpn_exclusions"]["motivo"] = detalle
 
+                ####### Auditoria
+                registrar_auditoria(
+                    modulo="SD-WAN / Traffic Shaping",
+                    accion="Sincronizar VPN Exclusions",
+                    organizacion=organizacion,
+                    network=network,
+                    objetivo="VPN Exclusions",
+                    resultado="Error",
+                    detalle=(
+                        f"Modelo: {organizacion_modelo} | "
+                        f"{network_modelo} | "
+                        f"Error: {detalle}"
+                    ),
+                )
+
             except requests.RequestException as error:
                 print("  ✗ VPN Exclusions → Error")
                 print(f"    Motivo: {error}")
+
+                ####### Auditoria
+                registrar_auditoria(
+                    modulo="SD-WAN / Traffic Shaping",
+                    accion="Sincronizar VPN Exclusions",
+                    organizacion=organizacion,
+                    network=network,
+                    objetivo="VPN Exclusions",
+                    resultado="Error",
+                    detalle=(
+                        f"Modelo: {organizacion_modelo} | "
+                        f"{network_modelo} | "
+                        f"Error de conexión: {error}"
+                    ),
+                )
 
         elif vpn["accion"] == "Sin cambios":
             print("  ○ VPN Exclusions → Sin cambios")
 
             resumen_networks[network_id]["vpn_exclusions"]["estado"] = "Sin cambios"
 
+            ### auditoria
+            registrar_auditoria(
+                modulo="SD-WAN / Traffic Shaping",
+                accion="Comparar VPN Exclusions",
+                organizacion=organizacion,
+                network=network,
+                objetivo="VPN Exclusions",
+                resultado="Sin cambios",
+                detalle=(f"Modelo: {organizacion_modelo} | " f"{network_modelo}"),
+            )
+            ####
+
         elif vpn["accion"] == "Omitir":
             print("  ⚠ VPN Exclusions → Omitidas")
 
             resumen_networks[network_id]["vpn_exclusions"]["estado"] = "Omitida"
-            resumen_networks[network_id]["vpn_exclusions"]["motivo"] = traffic.get(
+            resumen_networks[network_id]["vpn_exclusions"]["motivo"] = vpn.get(
                 "motivo"
+            )
+
+            registrar_auditoria(
+                modulo="SD-WAN / Traffic Shaping",
+                accion="Sincronizar VPN Exclusions",
+                organizacion=organizacion,
+                network=network,
+                objetivo="VPN Exclusions",
+                resultado="Omitido",
+                detalle=(
+                    f"Modelo: {organizacion_modelo} | "
+                    f"{network_modelo} | "
+                    f"Motivo: {vpn.get('motivo', 'No disponible')}"
+                ),
             )
 
             if vpn.get("motivo"):

@@ -12,6 +12,7 @@ from modules.alta_evento import (
     seleccionar_organizacion,
 )
 from navegacion import input_menu
+from auditoria import registrar_auditoria
 
 
 def preparar_content_filtering(
@@ -243,6 +244,8 @@ def seleccionar_networks_destino(
 def analizar_filtering_destino(
     filtering_modelo: dict,
     networks_destino: list[dict],
+    organizacion_modelo: str,
+    network_modelo: str,
 ) -> list[dict]:
     """
     Consulta cada Network destino y clasifica
@@ -269,6 +272,37 @@ def analizar_filtering_destino(
                 f"{destino['network_name']}."
             )
             print(f"  Motivo: {detalle}")
+
+            ###### Auditoria
+            registrar_auditoria(
+                modulo="Content Filtering",
+                accion="Consultar Content Filtering destino",
+                organizacion=destino["organization_name"],
+                network=destino["network_name"],
+                objetivo="Content Filtering",
+                resultado="Omitido",
+                detalle=(
+                    f"Modelo: {organizacion_modelo} | "
+                    f"{network_modelo} | "
+                    f"Error: {detalle}"
+                ),
+            )
+
+            #### Auditoria
+
+            registrar_auditoria(
+                modulo="Content Filtering",
+                accion="Consultar Content Filtering destino",
+                organizacion=destino["organization_name"],
+                network=destino["network_name"],
+                objetivo="Content Filtering",
+                resultado="Error",
+                detalle=(
+                    f"Modelo: {organizacion_modelo} | "
+                    f"{network_modelo} | "
+                    f"Error de conexión: {error}"
+                ),
+            )
 
             continue
 
@@ -324,6 +358,8 @@ def mostrar_analisis_filtering(
 
 def ejecutar_sincronizacion_filtering(
     resultados: list[dict],
+    organizacion_modelo: str,
+    network_modelo: str,
 ) -> None:
     """
     Actualiza Content Filtering en las Networks
@@ -368,6 +404,18 @@ def ejecutar_sincronizacion_filtering(
             sin_cambios += 1
 
             print(f"{organizacion} | {network} " "→ Sin cambios")
+
+            #### Auditoria
+            registrar_auditoria(
+                modulo="Content Filtering",
+                accion="Comparar Content Filtering con modelo",
+                organizacion=organizacion,
+                network=network,
+                objetivo="Content Filtering",
+                resultado="Sin cambios",
+                detalle=(f"Modelo: {organizacion_modelo} | " f"{network_modelo}"),
+            )
+            ###
             continue
 
         try:
@@ -380,6 +428,32 @@ def ejecutar_sincronizacion_filtering(
 
             print(f"✓ {organizacion} | {network} " "→ Content Filtering actualizado")
 
+            ####### Auditoria
+            configuracion = resultado["configuracion"]
+
+            permitidos = len(configuracion.get("allowedUrlPatterns", []))
+
+            bloqueados = len(configuracion.get("blockedUrlPatterns", []))
+
+            categorias = len(configuracion.get("blockedUrlCategories", []))
+
+            registrar_auditoria(
+                modulo="Content Filtering",
+                accion="Sincronizar Content Filtering",
+                organizacion=organizacion,
+                network=network,
+                objetivo="Content Filtering",
+                resultado="Correcto",
+                detalle=(
+                    f"Modelo: {organizacion_modelo} | "
+                    f"{network_modelo} | "
+                    f"URLs permitidas: {permitidos} | "
+                    f"URLs bloqueadas: {bloqueados} | "
+                    f"Categorías bloqueadas: {categorias}"
+                ),
+            )
+            ########
+
         except requests.HTTPError as error:
             errores += 1
 
@@ -388,11 +462,41 @@ def ejecutar_sincronizacion_filtering(
             print(f"✗ {organizacion} | {network} " "→ Omitida")
             print(f"  Motivo: {detalle}")
 
+            ###### Auditoria
+            registrar_auditoria(
+                modulo="Content Filtering",
+                accion="Sincronizar Content Filtering",
+                organizacion=organizacion,
+                network=network,
+                objetivo="Content Filtering",
+                resultado="Error",
+                detalle=(
+                    f"Modelo: {organizacion_modelo} | "
+                    f"{network_modelo} | "
+                    f"Error: {detalle}"
+                ),
+            )
+
         except requests.RequestException as error:
             errores += 1
 
             print(f"✗ {organizacion} | {network} " "→ Error")
             print(f"  Motivo: {error}")
+
+            ##### Auditoria
+            registrar_auditoria(
+                modulo="Content Filtering",
+                accion="Sincronizar Content Filtering",
+                organizacion=organizacion,
+                network=network,
+                objetivo="Content Filtering",
+                resultado="Error",
+                detalle=(
+                    f"Modelo: {organizacion_modelo} | "
+                    f"{network_modelo} | "
+                    f"Error de conexión: {error}"
+                ),
+            )
 
     print("\nResumen:")
     print(f"- Actualizadas: {actualizadas}")
@@ -430,11 +534,16 @@ def sincronizar_content_filtering() -> None:
         resultados = analizar_filtering_destino(
             filtering_modelo=filtering_modelo,
             networks_destino=networks_destino,
+            organizacion_modelo=organizacion_modelo["name"],
+            network_modelo=network_modelo["name"],
         )
-
         mostrar_analisis_filtering(resultados)
 
-        ejecutar_sincronizacion_filtering(resultados)
+        ejecutar_sincronizacion_filtering(
+            resultados=resultados,
+            organizacion_modelo=organizacion_modelo["name"],
+            network_modelo=network_modelo["name"],
+        )
 
     except ValueError as error:
         print(f"\nError de selección: {error}\n")

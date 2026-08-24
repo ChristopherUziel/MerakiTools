@@ -14,6 +14,7 @@ from meraki_api import (
     retirar_dispositivo_network,
 )
 from navegacion import input_menu
+from auditoria import registrar_auditoria
 
 
 def normalizar_serial(serial: str) -> str:
@@ -808,3 +809,27 @@ def alta_evento():
         equipos=equipos_procesables,
         network_destino=network,
     )
+
+    for equipo in equipos_procesables:
+        resultado = equipo.get(
+            "resultado",
+            "Sin procesar",
+        )
+
+        detalle = ""
+
+        if equipo.get("error"):
+            detalle = (
+                f"Etapa: {equipo.get('ultima_etapa', 'No disponible')} | "
+                f"Error: {equipo['error']}"
+            )
+
+        registrar_auditoria(
+            modulo="Alta de equipos",
+            accion="Alta / configuración de dispositivo",
+            organizacion=organizacion["name"],
+            network=network["name"],
+            objetivo=equipo["serial"],
+            resultado=resultado,
+            detalle=detalle,
+        )

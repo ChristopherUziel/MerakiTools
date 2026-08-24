@@ -8,11 +8,12 @@ from meraki_api import (
     obtener_organizaciones,
 )
 from navegacion import input_menu
+from auditoria import registrar_auditoria
 
 
 def normalizar_serial_desmontaje(serial: str) -> str:
 
-    serial_limpio = serial.strip().upper().replace("-", "").replace("'","")
+    serial_limpio = serial.strip().upper().replace("-", "").replace("'", "")
 
     if len(serial_limpio) != 12:
         raise ValueError(f"El serial '{serial}' no tiene 12 caracteres.")
@@ -147,6 +148,17 @@ def clasificar_equipos_desmontaje(
         seriales=seriales,
     )
 
+    ##### Auditoria
+    networks = obtener_networks(organization_id)
+
+    networks_por_id = {
+        network["id"]: network.get(
+            "name",
+            "Sin nombre",
+        )
+        for network in networks
+    }
+
     dispositivos_por_serial = {
         dispositivo["serial"]: dispositivo for dispositivo in dispositivos
     }
@@ -173,10 +185,14 @@ def clasificar_equipos_desmontaje(
             ),
             "nombre_actual": dispositivo.get("name"),
             "network_actual_id": dispositivo.get("networkId"),
+            "network_actual_name": networks_por_id.get(
+                dispositivo.get("networkId"),
+                "Sin Network",
+            ),
         }
 
         if nombre_esta_recuperado(equipo["nombre_actual"]):
-                    clasificacion["ya_recuperados"].append(equipo)
+            clasificacion["ya_recuperados"].append(equipo)
 
         elif equipo["network_actual_id"] != network_evento_id:
             equipo["nombre_nuevo"] = crear_nombre_recuperado(equipo["nombre_actual"])
@@ -258,6 +274,7 @@ def mostrar_resumen_desmontaje(
 
 def procesar_desmontaje(
     equipos: list[dict],
+    organizacion: str,
 ) -> None:
     """
     Añade RECUPERADO al nombre de los equipos pendientes.
@@ -289,11 +306,44 @@ def procesar_desmontaje(
 
             print(f"✓ {serial} | {nombre_nuevo}")
 
+            ###### Auditoria
+
+            registrar_auditoria(
+                modulo="Desmontaje",
+                accion="Marcar equipo como RECUPERADO",
+                organizacion=organizacion,
+                network=equipo.get(
+                    "network_actual_name",
+                    "Sin Network",
+                ),
+                objetivo=serial,
+                resultado="Correcto",
+                detalle=(
+                    f"Nombre anterior: "
+                    f"{equipo.get('nombre_actual') or 'Sin nombre'} | "
+                    f"Nombre nuevo: {nombre_nuevo}"
+                ),
+            )
+
         except requests.RequestException as error:
             equipo["resultado"] = "Error"
             equipo["error"] = str(error)
 
             print(f"✗ {serial} | No se pudo actualizar: " f"{error}")
+
+            ##### Auditoria
+            registrar_auditoria(
+                modulo="Desmontaje",
+                accion="Marcar equipo como RECUPERADO",
+                organizacion=organizacion,
+                network=equipo.get(
+                    "network_actual_name",
+                    "Sin Network",
+                ),
+                objetivo=serial,
+                resultado="Error",
+                detalle=(f"Nombre solicitado: {nombre_nuevo} | " f"Error: {error}"),
+            )
 
     print("\n=== RESULTADO FINAL ===\n")
 
@@ -368,6 +418,20 @@ def desmontaje():
         seriales_duplicados=seriales_duplicados,
     )
 
+    ##### Auditoria
+    for serial in clasificacion["no_encontrados"]:
+        registrar_auditoria(
+            modulo="Desmontaje",
+            accion="Buscar equipo para desmontaje",
+            organizacion=organizacion["name"],
+            network=network["name"],
+            objetivo=serial,
+            resultado="No encontrado",
+            detalle=(
+                "El serial no fue encontrado en el inventario de la organización."
+            ),
+        )
+
     pendientes = clasificacion["pendientes"]
     otra_network = clasificacion["otra_network"]
 
@@ -380,26 +444,35 @@ def desmontaje():
     else:
         print("\nSolo se modificarán los equipos mostrados " "como pendientes")
 
-        confirmacion = (
-            input_menu("\n¿Deseas marcar los pendientes como RECUPERADO? " "(S/N):\n> ").upper()
-        )
+        confirmacion = input_menu(
+            "\n¿Deseas marcar los pendientes como RECUPERADO? " "(S/N):\n> "
+        ).upper()
 
         if confirmacion != "S":
-            print("\nOperación cancelada. " "No se realizaron cambios en los pendientes.\n")
-        else: 
-            procesar_desmontaje(pendientes)
+            print(
+                "\nOperación cancelada. "
+                "No se realizaron cambios en los pendientes.\n"
+            )
+        else:
+            procesar_desmontaje(
+                equipos=pendientes,
+                organizacion=organizacion["name"],
+            )
 
     if not otra_network:
         print("\nNo existen equipos pendientes de otra Network por marcar. \n")
     else:
         print("\nDeseas modificar los equipos mostrados " "en otra network?")
-    
-        confirmacion = (
-            input_menu("\n¿Deseas marcarlos como RECUPERADO? " "(S/N):\n> ").upper()
-        )
-    
+
+        confirmacion = input_menu(
+            "\n¿Deseas marcarlos como RECUPERADO? " "(S/N):\n> "
+        ).upper()
+
         if confirmacion != "S":
             print("\nOperación cancelada. " "No se realizaron cambios.\n")
             return
-    
-        procesar_desmontaje(otra_network)
+
+        procesar_desmontaje(
+            equipos=otra_network,
+            organizacion=organizacion["name"],
+        )
