@@ -12,7 +12,7 @@ from config import configurar_api_key_si_es_necesario
 from modules.politicas import sincronizar_politicas
 
 ##imports de modulo content filtering
-from modules.content_filtering import(
+from modules.content_filtering import (
     sincronizar_content_filtering,
 )
 
@@ -63,13 +63,24 @@ def main():
 
     try:
         configurar_api_key_si_es_necesario()
+        inicializar()
 
     except ValueError as error:
         print(f"\nError de configuración: {error}\n")
         input("Presiona Enter para cerrar...")
         return
 
-    inicializar()
+    except Exception as error:
+        print("\n" + "=" * 50)
+        print(" ERROR AL INICIAR MERAKITOOLS")
+        print("=" * 50)
+
+        print(f"\nTipo de error: " f"{type(error).__name__}")
+
+        print(f"Detalle: {error}")
+
+        input("\nPresiona Enter para cerrar...")
+        return
 
     while True:
         mostrar_menu()
@@ -116,6 +127,20 @@ def main():
 
         except VolverMenuPrincipal:
             print("\nRegresando al menu principal...\n")
+
+        except Exception as error:
+            print("\n" + "=" * 50)
+            print(" OCURRIÓ UN ERROR INESPERADO")
+            print("=" * 50)
+
+            print(f"\nTipo de error: " f"{type(error).__name__}")
+
+            print(f"Detalle: {error}")
+
+            print(
+                "\nLa operación fue cancelada."
+                "\nMerakiTools continuará en el menú principal.\n"
+            )
 
 
 if __name__ == "__main__":
