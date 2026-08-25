@@ -20,6 +20,7 @@ from modules.alta_evento import (
     seleccionar_organizacion,
 )
 from navegacion import input_menu
+from auditoria import registrar_auditoria
 
 
 def identificar_tipo_equipo(modelo: str) -> str:
@@ -925,7 +926,9 @@ def alta_entre_organizaciones():
         print("\nEl nombre base es obligatorio.\n")
         return
 
-    entrada_tags = input_menu("Nuevos tags para equipos MR, " "separados por comas:\n> ")
+    entrada_tags = input_menu(
+        "Nuevos tags para equipos MR, " "separados por comas:\n> "
+    )
 
     tags_nuevos = [tag.strip() for tag in entrada_tags.split(",") if tag.strip()]
 
@@ -989,12 +992,9 @@ def alta_entre_organizaciones():
         print("\nNo hay equipos MR o MS disponibles " "para procesar.\n")
         return
 
-    confirmacion = (
-        input_menu(
-            "\n¿Confirmas el movimiento de los equipos " "MR y MS mostrados? (S/N):\n> "
-        )
-        .upper()
-    )
+    confirmacion = input_menu(
+        "\n¿Confirmas el movimiento de los equipos " "MR y MS mostrados? (S/N):\n> "
+    ).upper()
 
     if confirmacion != "S":
         print("\nOperación cancelada. " "No se realizaron cambios.\n")
@@ -1113,3 +1113,69 @@ def procesar_alta_entre_organizaciones(
     )
 
     mostrar_resultado_final_movimiento(equipos)
+
+    ###### Auditoria
+    for equipo in equipos:
+
+        if not equipo_puede_procesarse(equipo):
+            registrar_auditoria(
+                modulo="Alta entre organizaciones",
+                accion="Validar equipo para movimiento",
+                organizacion=organizacion_destino["name"],
+                network=network_destino["name"],
+                objetivo=equipo["serial"],
+                resultado="Bloqueado",
+                detalle=(
+                    f"Origen: "
+                    f"{equipo.get('organizacion_actual_nombre', 'No disponible')} | "
+                    f"{equipo.get('network_actual_nombre', 'No disponible')} | "
+                    f"Motivo: {equipo.get('accion', 'Tipo no permitido')}"
+                ),
+            )
+
+            continue
+
+        serial = equipo["serial"]
+
+        organizacion_origen = equipo.get(
+            "organizacion_actual_nombre",
+            "No disponible",
+        )
+
+        network_origen = equipo.get(
+            "network_actual_nombre",
+            "No disponible",
+        )
+
+        resultado = equipo.get(
+            "resultado",
+            "Sin procesar",
+        )
+
+        ultima_etapa = equipo.get(
+            "ultima_etapa",
+            "No disponible",
+        )
+
+        error = equipo.get("error")
+
+        detalle = (
+            f"Origen: {organizacion_origen} | "
+            f"{network_origen} | "
+            f"Destino: {organizacion_destino['name']} | "
+            f"{network_destino['name']} | "
+            f"Última etapa: {ultima_etapa}"
+        )
+
+        if error:
+            detalle += f" | Error: {error}"
+
+        registrar_auditoria(
+            modulo="Alta entre organizaciones",
+            accion="Mover equipo entre organizaciones",
+            organizacion=organizacion_destino["name"],
+            network=network_destino["name"],
+            objetivo=serial,
+            resultado=resultado,
+            detalle=detalle,
+        )

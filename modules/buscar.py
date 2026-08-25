@@ -7,13 +7,15 @@ from meraki_api import (
     obtener_organizaciones,
 )
 from navegacion import input_menu
+from auditoria import registrar_auditoria
+
 
 def normalizar_serial_busqueda(serial: str) -> str:
     """
     Normaliza la serie del equipo
     """
 
-    serial_limpio = serial.strip().upper().replace("-", "").replace("'","")
+    serial_limpio = serial.strip().upper().replace("-", "").replace("'", "")
 
     if len(serial_limpio) != 12:
         raise ValueError("El serial debe contener 12 caracteres.")
@@ -334,6 +336,20 @@ def ejecutar_busqueda_multiple(
     print(f"Equipos encontrados:  {encontrados}")
     print(f"No encontrados:       {len(no_encontrados)}")
 
+    ###### Auditoria
+    registrar_auditoria(
+        modulo="Búsqueda de equipos",
+        accion="Búsqueda en organización",
+        organizacion=organizacion["name"],
+        objetivo=", ".join(seriales),
+        resultado="Correcto",
+        detalle=(
+            f"Seriales consultados: {len(seriales)} | "
+            f"Equipos encontrados: {encontrados}"
+        ),
+    )
+    #######
+
 
 def ejecutar_busqueda_global(
     seriales: list[str],
@@ -457,6 +473,19 @@ def ejecutar_busqueda_global(
     print(f"Equipos encontrados:  {len(resultados)}")
     print(f"No encontrados:       {len(no_encontrados)}")
 
+    ##### Auditoria
+    registrar_auditoria(
+        modulo="Búsqueda de equipos",
+        accion="Búsqueda global",
+        objetivo=", ".join(seriales),
+        resultado="Correcto",
+        detalle=(
+            f"Seriales consultados: {len(seriales)} | "
+            f"Equipos encontrados: {len(resultados)}"
+        ),
+    )
+    #####
+
 
 def buscar():
     print("\n=== BUSCAR EQUIPO ===\n")
@@ -558,9 +587,9 @@ def buscar_todas_organizaciones():
         except requests.RequestException as error:
             print("\nNo fue posible comunicarse " f"con Meraki: {error}\n")
 
-        continuar = (
-            input_menu("\n¿Deseas realizar otra búsqueda global? " "(S/N):\n> ").upper()
-        )
+        continuar = input_menu(
+            "\n¿Deseas realizar otra búsqueda global? " "(S/N):\n> "
+        ).upper()
 
         if continuar != "S":
             print("\nRegresando al menú principal...\n")

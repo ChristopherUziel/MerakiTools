@@ -26,8 +26,7 @@ def convertir_seriales_desmontaje(
 ) -> tuple[list[str], list[str]]:
     """
     Normaliza los seriales y devuelve:
-    - seriales únicos
-    - seriales repetidos en la captura
+    - seriales únicos y seriales repetidos en la captura
     """
 
     seriales_unicos = []

@@ -10,6 +10,7 @@ from meraki_api import (
 )
 from navegacion import input_menu
 import ipaddress
+from auditoria import registrar_auditoria
 
 
 def validar_ip(ip: str) -> str | None:
@@ -409,11 +410,13 @@ def buscar_clientes() -> None:
             print("\nMAC inválida o incompleta. " "Usa el formato aa:bb:cc:dd:ee:ff.\n")
             return
 
+        accion_auditoria = "Búsqueda de cliente por MAC"
+        objetivo_auditoria = mac
+
         resultados = buscar_cliente_global_mac(mac)
 
     ##################
     # BÚSQUEDA POR IP
-
 
     elif opcion == "2":
         ip_ingresada = input_menu("\nIngresa la IP del cliente:\n> ")
@@ -423,6 +426,9 @@ def buscar_clientes() -> None:
         if ip is None:
             print("\nDirección IP inválida.\n")
             return
+
+        accion_auditoria = "Búsqueda de cliente por IP"
+        objetivo_auditoria = ip
 
         timespan = seleccionar_periodo_busqueda()
 
@@ -439,9 +445,29 @@ def buscar_clientes() -> None:
     # RESULTADOS
 
     if not resultados:
+        ###### Auditoria
+
+        registrar_auditoria(
+            modulo="Búsqueda de clientes",
+            accion=accion_auditoria,
+            objetivo=objetivo_auditoria,
+            resultado="Correcto",
+            detalle="Coincidencias encontradas: 0",
+        )
+        #########
         print("\nNo se encontró el cliente.\n")
         return
 
+    ######## Auditoria cuando si hay resultados
+
+    registrar_auditoria(
+        modulo="Búsqueda de clientes",
+        accion=accion_auditoria,
+        objetivo=objetivo_auditoria,
+        resultado="Correcto",
+        detalle=(f"Coincidencias encontradas: " f"{len(resultados)}"),
+    )
+    #########
     print(f"\nSe encontraron " f"{len(resultados)} coincidencia(s).")
 
     for resultado in resultados:
