@@ -36,6 +36,10 @@ from auditoria import (
     registrar_cierre_sesion,
 )
 
+from modules.auditoria_menu import(
+    menu_auditoria,
+)
+
 __author__ = "Christopher Uziel Martinez Alvarez"
 __project__ = "MerakiTools"
 __version__ = "1.0"
@@ -66,7 +70,8 @@ def mostrar_menu():
     print("8. Sincronizar SD-WAN & Traffic shaping")
     print("9. Sincronizar Content Filtering")
     print("10. Reportes")
-    print("11. Salir")
+    print("11. Administración de Auditoría")
+    print("12. Salir")
     print("=" * 40)
 
 
@@ -150,6 +155,9 @@ def main():
                 reportes()
 
             elif opcion == "11":
+                menu_auditoria()
+
+            elif opcion == "12":
 
                 registrar_cierre_sesion(
                     "Salida desde el menú principal"
