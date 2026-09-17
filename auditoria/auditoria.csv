@@ -1,7 +1,0 @@
-﻿fecha_hora         , usuario                        , modulo             , accion                  , organizacion, network, objetivo      , resultado, detalle
-
-2026-08-25 13:37:26, umartinez@eventossistema.com.mx, Sistema            , Inicio de sesión        ,             ,        ,               , Correcto , 
-2026-08-25 13:37:27, umartinez@eventossistema.com.mx, Sistema            , Cierre de sesión        ,             ,        ,               , Correcto , Cierre del proceso
-2026-08-25 13:37:36, umartinez@eventossistema.com.mx, Sistema            , Inicio de sesión        ,             ,        ,               , Correcto , 
-2026-08-25 13:40:17, umartinez@eventossistema.com.mx, Búsqueda de equipos, Búsqueda en organización, OCESA       ,        , Q3AC-ETAS-BJ4U, Correcto , Seriales consultados: 1 | Equipos encontrados: 1
-2026-08-25 13:40:32, umartinez@eventossistema.com.mx, Sistema            , Cierre de sesión        ,             ,        ,               , Correcto , Salida desde el menú principal
