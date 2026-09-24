@@ -1,5 +1,0 @@
-﻿id_registro                         , fecha_hora         , usuario                        , modulo , accion          , organizacion, network, objetivo, resultado, detalle
-7c4ee0e4-bf60-43ac-a6ff-c8fef856cf6c, 2026-09-23 19:26:04, umartinez@eventossistema.com.mx, Sistema, Cierre de sesión,             ,        ,         , Correcto , Cierre directo de la consola
-a183c6a0-42f1-47f8-a21e-161660444cba, 2026-09-23 19:26:12, umartinez@eventossistema.com.mx, Sistema, Inicio de sesión,             ,        ,         , Correcto , 
-56a2e0b8-bf0c-4a7b-ab09-cda702866926, 2026-09-23 19:26:16, umartinez@eventossistema.com.mx, Sistema, Cierre de sesión,             ,        ,         , Correcto , Salida desde el menú principal
-da963da7-2092-4f10-b846-bf172247037f, 2026-09-23 19:26:21, umartinez@eventossistema.com.mx, Sistema, Inicio de sesión,             ,        ,         , Correcto , 
