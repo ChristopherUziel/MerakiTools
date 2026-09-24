@@ -34,6 +34,7 @@ from auditoria import (
     registrar_auditoria,
     preparar_control_cierre,
     registrar_cierre_sesion,
+    asegurar_configuracion_auditoria,
 )
 
 from modules.auditoria_menu import(
@@ -78,6 +79,8 @@ def mostrar_menu():
 def main():
 
     try:
+        asegurar_configuracion_auditoria()
+
         configurar_api_key_si_es_necesario()
         inicializar()
 

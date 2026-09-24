@@ -8,13 +8,19 @@ import os
 import secrets
 from datetime import datetime
 
+import uuid
+
 import keyring
 from cryptography.fernet import Fernet
 
 from config import CARPETA_BASE
 
+### archivo de auditoria respaldo local
 CARPETA_AUDITORIA = CARPETA_BASE / "auditoria"
 ARCHIVO_AUDITORIA = CARPETA_AUDITORIA / "auditoria.dat"
+
+##### Archivo de pendientes de sincronizar en azure
+ARCHIVO_PENDIENTES = CARPETA_AUDITORIA / "pendientes.dat"
 
 SERVICIO_AUDITORIA = "MerakiTools_Auditoria"
 USUARIO_CLAVE_CIFRADO = "clave_cifrado"
@@ -24,6 +30,16 @@ USUARIO_PASSWORD_EXPORTACION = "password_exportacion"
 
 ITERACIONES_PASSWORD = 310_000
 
+# Credenciales iniciales compartidas de MerakiTools.
+# Se utilizan únicamente cuando el equipo todavía no tiene configuradas las credenciales de auditoría.
+
+CLAVE_CIFRADO_INICIAL = "fycsSvifTNLKZrq_eKoSDOGvNvnwsPyEhMsY78c5nVI="
+
+VERIFICADOR_PASSWORD_EXPORTACION_INICIAL = (
+    '{"salt": "JmRuup4uTfe7RslZ6k8Uhw==", '
+    '"hash": "xEUBkoWNtj/5+TyOkqrW9VDWa+6/AV3ziym2JKdsxRc="}'
+)
+
 CARPETA_EXPORTACIONES = CARPETA_AUDITORIA / "exportaciones"
 ######
 
@@ -31,28 +47,139 @@ USUARIO_ACTUAL = "Usuario desconocido"
 SESION_CERRADA = False
 
 
+def asegurar_configuracion_auditoria() -> None:
+    """
+    Verifica que el equipo tenga instaladas las
+    credenciales necesarias para la auditoría.
+
+    Si todavía no existen, instala las credenciales
+    iniciales definidas
+    """
+
+    try:
+        clave_guardada = keyring.get_password(
+            SERVICIO_AUDITORIA,
+            USUARIO_CLAVE_CIFRADO,
+        )
+
+        if not clave_guardada:
+
+            try:
+                Fernet(CLAVE_CIFRADO_INICIAL.encode("utf-8"))
+
+            except Exception as error:
+                raise RuntimeError(
+                    "La clave Fernet inicial configurada "
+                    "en MerakiTools no es válida."
+                ) from error
+
+            keyring.set_password(
+                SERVICIO_AUDITORIA,
+                USUARIO_CLAVE_CIFRADO,
+                CLAVE_CIFRADO_INICIAL,
+            )
+
+            clave_verificacion = keyring.get_password(
+                SERVICIO_AUDITORIA,
+                USUARIO_CLAVE_CIFRADO,
+            )
+
+            if clave_verificacion != CLAVE_CIFRADO_INICIAL:
+                raise RuntimeError(
+                    "La clave de cifrado no pudo guardarse correctamente."
+                )
+
+        password_guardado = keyring.get_password(
+            SERVICIO_AUDITORIA,
+            USUARIO_PASSWORD_EXPORTACION,
+        )
+
+        if not password_guardado:
+
+            try:
+                datos_password = json.loads(VERIFICADOR_PASSWORD_EXPORTACION_INICIAL)
+
+                base64.b64decode(
+                    datos_password["salt"],
+                    validate=True,
+                )
+
+                base64.b64decode(
+                    datos_password["hash"],
+                    validate=True,
+                )
+
+            except (
+                json.JSONDecodeError,
+                KeyError,
+                ValueError,
+            ) as error:
+                raise RuntimeError(
+                    "El verificador inicial de la "
+                    "contraseña de auditoría no es válido."
+                ) from error
+
+            keyring.set_password(
+                SERVICIO_AUDITORIA,
+                USUARIO_PASSWORD_EXPORTACION,
+                VERIFICADOR_PASSWORD_EXPORTACION_INICIAL,
+            )
+
+            password_verificacion = keyring.get_password(
+                SERVICIO_AUDITORIA,
+                USUARIO_PASSWORD_EXPORTACION,
+            )
+
+            if password_verificacion != VERIFICADOR_PASSWORD_EXPORTACION_INICIAL:
+                raise RuntimeError(
+                    "El verificador de la contraseña "
+                    "de auditoría no pudo guardarse correctamente."
+                )
+
+    except RuntimeError:
+        raise
+
+    except Exception as error:
+        raise RuntimeError(
+            "No fue posible configurar las credenciales "
+            "de auditoría en el gestor de credenciales "
+            "del sistema."
+        ) from error
+
+
 def obtener_clave_cifrado() -> bytes:
     """
-    Obtiene la clave utilizada para cifrar la auditoría o si no existe, crea una nueva
+    Obtiene la clave de cifrada guardara en credenciales del sistema
     """
 
-    clave_guardada = keyring.get_password(
-        SERVICIO_AUDITORIA,
-        USUARIO_CLAVE_CIFRADO,
-    )
+    try:
+        clave_guardada = keyring.get_password(
+            SERVICIO_AUDITORIA,
+            USUARIO_CLAVE_CIFRADO,
+        )
 
-    if clave_guardada:
-        return clave_guardada.encode("utf-8")
+    except Exception as error:
+        raise RuntimeError(
+            "No fue posible acceder a la clave de "
+            "cifrado almacenada en el gestor de "
+            "credenciales del sistema."
+        ) from error
 
-    clave_nueva = Fernet.generate_key()
+    if not clave_guardada:
+        raise RuntimeError(
+            "La clave de cifrado de auditoría "
+            "no se encuentra configurada en este equipo."
+        )
 
-    keyring.set_password(
-        SERVICIO_AUDITORIA,
-        USUARIO_CLAVE_CIFRADO,
-        clave_nueva.decode("utf-8"),
-    )
+    try:
+        Fernet(clave_guardada.encode("utf-8"))
 
-    return clave_nueva
+    except Exception as error:
+        raise RuntimeError(
+            "La clave de cifrado almacenada " "no tiene un formato Fernet válido."
+        ) from error
+
+    return clave_guardada.encode("utf-8")
 
 
 def establecer_password_exportacion(
@@ -237,6 +364,7 @@ def registrar_auditoria(
     fecha_hora = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     registro = {
+        "id_registro": str(uuid.uuid4()),
         "fecha_hora": fecha_hora,
         "usuario": USUARIO_ACTUAL,
         "modulo": modulo,
@@ -329,6 +457,7 @@ def exportar_auditoria_csv() -> str:
     archivo_salida = CARPETA_EXPORTACIONES / f"auditoria_{fecha}.csv"
 
     columnas = [
+        "id_registro",
         "fecha_hora",
         "usuario",
         "modulo",

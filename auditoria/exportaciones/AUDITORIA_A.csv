@@ -1,0 +1,77 @@
+﻿id_registro,fecha_hora,usuario,modulo,accion,organizacion,network,objetivo,resultado,detalle
+,2026-08-26 10:49:00,umartinez@eventossistema.com.mx,Sistema,Inicio de sesión,,,,Correcto,
+,2026-08-26 10:49:06,umartinez@eventossistema.com.mx,Sistema,Cierre de sesión,,,,Correcto,Salida desde el menú principal
+,2026-08-27 10:30:51,umartinez@eventossistema.com.mx,Sistema,Inicio de sesión,,,,Correcto,
+,2026-08-27 10:31:27,umartinez@eventossistema.com.mx,Búsqueda de equipos,Búsqueda global,,,"Q2HP-7FKV-HNXP, Q2HP-VWTP-GD83",Correcto,Seriales consultados: 2 | Equipos encontrados: 2
+,2026-08-27 10:43:13,umartinez@eventossistema.com.mx,Alta entre organizaciones,Mover equipo entre organizaciones,EVENTOS OC,#Pruebas MerakiTools_OC,Q2HP-7FKV-HNXP,Error,"Origen: EVENTOS | #P26 Campo Marte Operacion - RECUPERADO | Destino: EVENTOS OC | #Pruebas MerakiTools_OC | Última etapa: Retirar de Network origen | Error: ('Connection aborted.', ConnectionResetError(10054, 'Se ha forzado la interrupción de una conexión existente por el host remoto', None, 10054, None))"
+,2026-08-27 10:43:13,umartinez@eventossistema.com.mx,Alta entre organizaciones,Mover equipo entre organizaciones,EVENTOS OC,#Pruebas MerakiTools_OC,Q2HP-VWTP-GD83,Error,"Origen: EVENTOS | #P26 Campo Marte Operacion - RECUPERADO | Destino: EVENTOS OC | #Pruebas MerakiTools_OC | Última etapa: Retirar de Network origen | Error: ('Connection aborted.', ConnectionResetError(10054, 'Se ha forzado la interrupción de una conexión existente por el host remoto', None, 10054, None))"
+,2026-08-27 10:43:13,umartinez@eventossistema.com.mx,Alta entre organizaciones,Mover equipo entre organizaciones,EVENTOS OC,#Pruebas MerakiTools_OC,Q2HP-HTLT-7Y4N,Correcto,Origen: EVENTOS | #P26 Campo Marte Activaciones - RECUPERADO | Destino: EVENTOS OC | #Pruebas MerakiTools_OC | Última etapa: Nombre y configuración actualizados
+,2026-08-27 11:03:35,umartinez@eventossistema.com.mx,Alta entre organizaciones,Mover equipo entre organizaciones,EVENTOS OC,#Pruebas MerakiTools_OC,Q2HP-7FKV-HNXP,Correcto,Origen: EVENTOS | #P26 Campo Marte Operacion - RECUPERADO | Destino: EVENTOS OC | #Pruebas MerakiTools_OC | Última etapa: Nombre y configuración actualizados
+,2026-08-27 11:03:35,umartinez@eventossistema.com.mx,Alta entre organizaciones,Mover equipo entre organizaciones,EVENTOS OC,#Pruebas MerakiTools_OC,Q2HP-VWTP-GD83,Correcto,Origen: EVENTOS | #P26 Campo Marte Operacion - RECUPERADO | Destino: EVENTOS OC | #Pruebas MerakiTools_OC | Última etapa: Nombre y configuración actualizados
+,2026-08-27 13:15:38,umartinez@eventossistema.com.mx,Búsqueda de clientes,Búsqueda de cliente por MAC,,,03:ff:fc:5f:ca:af,Correcto,Coincidencias encontradas: 1
+,2026-08-27 18:59:15,umartinez@eventossistema.com.mx,Sistema,Cierre de sesión,,,,Correcto,Cierre directo de la consola
+,2026-08-31 10:34:41,umartinez@eventossistema.com.mx,Sistema,Inicio de sesión,,,,Correcto,
+,2026-08-31 10:43:57,umartinez@eventossistema.com.mx,Group Policies,Actualizar política desde modelo,OCESA,OCESA Arena VFG Guadalajara,ISE Admin Directivos,Correcto,Modelo: OCESA | OCESA Oficinas Hipodromo
+,2026-08-31 10:43:58,umartinez@eventossistema.com.mx,Group Policies,Actualizar política desde modelo,OCESA,OCESA Arena VFG Guadalajara,ISE AdServices,Correcto,Modelo: OCESA | OCESA Oficinas Hipodromo
+,2026-08-31 10:43:59,umartinez@eventossistema.com.mx,Group Policies,Actualizar política desde modelo,OCESA,OCESA Arena VFG Guadalajara,ISE General,Correcto,Modelo: OCESA | OCESA Oficinas Hipodromo
+,2026-08-31 10:43:59,umartinez@eventossistema.com.mx,Group Policies,Comparar política con modelo,OCESA,OCESA Arena VFG Guadalajara,ISE Invitados,Sin cambios,Modelo: OCESA | OCESA Oficinas Hipodromo
+,2026-08-31 10:43:59,umartinez@eventossistema.com.mx,Group Policies,Actualizar política desde modelo,OCESA,OCESA Arena VFG Guadalajara,ISE Medios,Correcto,Modelo: OCESA | OCESA Oficinas Hipodromo
+,2026-08-31 10:43:59,umartinez@eventossistema.com.mx,Group Policies,Comparar política con modelo,OCESA,OCESA Arena VFG Guadalajara,ISE SAP,Sin cambios,Modelo: OCESA | OCESA Oficinas Hipodromo
+,2026-08-31 10:44:00,umartinez@eventossistema.com.mx,Group Policies,Actualizar política desde modelo,OCESA,OCESA Auditorio Banamex MTY,ISE Admin Directivos,Correcto,Modelo: OCESA | OCESA Oficinas Hipodromo
+,2026-08-31 10:44:01,umartinez@eventossistema.com.mx,Group Policies,Actualizar política desde modelo,OCESA,OCESA Auditorio Banamex MTY,ISE AdServices,Correcto,Modelo: OCESA | OCESA Oficinas Hipodromo
+,2026-08-31 10:44:03,umartinez@eventossistema.com.mx,Group Policies,Actualizar política desde modelo,OCESA,OCESA Auditorio Banamex MTY,ISE General,Correcto,Modelo: OCESA | OCESA Oficinas Hipodromo
+,2026-08-31 10:44:03,umartinez@eventossistema.com.mx,Group Policies,Comparar política con modelo,OCESA,OCESA Auditorio Banamex MTY,ISE Invitados,Sin cambios,Modelo: OCESA | OCESA Oficinas Hipodromo
+,2026-08-31 10:44:03,umartinez@eventossistema.com.mx,Group Policies,Actualizar política desde modelo,OCESA,OCESA Auditorio Banamex MTY,ISE Medios,Correcto,Modelo: OCESA | OCESA Oficinas Hipodromo
+,2026-08-31 10:44:03,umartinez@eventossistema.com.mx,Group Policies,Comparar política con modelo,OCESA,OCESA Auditorio Banamex MTY,ISE SAP,Sin cambios,Modelo: OCESA | OCESA Oficinas Hipodromo
+,2026-08-31 10:44:04,umartinez@eventossistema.com.mx,Group Policies,Actualizar política desde modelo,OCESA,OCESA Auditorio GNP Puebla,ISE Admin Directivos,Correcto,Modelo: OCESA | OCESA Oficinas Hipodromo
+,2026-08-31 10:44:05,umartinez@eventossistema.com.mx,Group Policies,Actualizar política desde modelo,OCESA,OCESA Auditorio GNP Puebla,ISE AdServices,Correcto,Modelo: OCESA | OCESA Oficinas Hipodromo
+,2026-08-31 10:44:05,umartinez@eventossistema.com.mx,Group Policies,Actualizar política desde modelo,OCESA,OCESA Auditorio GNP Puebla,ISE General,Correcto,Modelo: OCESA | OCESA Oficinas Hipodromo
+,2026-08-31 10:44:05,umartinez@eventossistema.com.mx,Group Policies,Comparar política con modelo,OCESA,OCESA Auditorio GNP Puebla,ISE Invitados,Sin cambios,Modelo: OCESA | OCESA Oficinas Hipodromo
+,2026-08-31 10:44:06,umartinez@eventossistema.com.mx,Group Policies,Actualizar política desde modelo,OCESA,OCESA Auditorio GNP Puebla,ISE Medios,Correcto,Modelo: OCESA | OCESA Oficinas Hipodromo
+,2026-08-31 10:44:06,umartinez@eventossistema.com.mx,Group Policies,Comparar política con modelo,OCESA,OCESA Auditorio GNP Puebla,ISE SAP,Sin cambios,Modelo: OCESA | OCESA Oficinas Hipodromo
+,2026-08-31 10:44:07,umartinez@eventossistema.com.mx,Group Policies,Actualizar política desde modelo,OCESA,OCESA Autodromo,ISE Admin Directivos,Correcto,Modelo: OCESA | OCESA Oficinas Hipodromo
+,2026-08-31 10:44:08,umartinez@eventossistema.com.mx,Group Policies,Actualizar política desde modelo,OCESA,OCESA Autodromo,ISE AdServices,Correcto,Modelo: OCESA | OCESA Oficinas Hipodromo
+,2026-08-31 10:44:08,umartinez@eventossistema.com.mx,Group Policies,Actualizar política desde modelo,OCESA,OCESA Autodromo,ISE General,Correcto,Modelo: OCESA | OCESA Oficinas Hipodromo
+,2026-08-31 10:44:08,umartinez@eventossistema.com.mx,Group Policies,Comparar política con modelo,OCESA,OCESA Autodromo,ISE Invitados,Sin cambios,Modelo: OCESA | OCESA Oficinas Hipodromo
+,2026-08-31 10:44:09,umartinez@eventossistema.com.mx,Group Policies,Actualizar política desde modelo,OCESA,OCESA Autodromo,ISE Medios,Correcto,Modelo: OCESA | OCESA Oficinas Hipodromo
+,2026-08-31 10:44:09,umartinez@eventossistema.com.mx,Group Policies,Comparar política con modelo,OCESA,OCESA Autodromo,ISE SAP,Sin cambios,Modelo: OCESA | OCESA Oficinas Hipodromo
+,2026-08-31 10:44:09,umartinez@eventossistema.com.mx,Group Policies,Actualizar política desde modelo,OCESA,OCESA Oficinas BNN,ISE Admin Directivos,Correcto,Modelo: OCESA | OCESA Oficinas Hipodromo
+,2026-08-31 10:44:10,umartinez@eventossistema.com.mx,Group Policies,Actualizar política desde modelo,OCESA,OCESA Oficinas BNN,ISE AdServices,Correcto,Modelo: OCESA | OCESA Oficinas Hipodromo
+,2026-08-31 10:44:11,umartinez@eventossistema.com.mx,Group Policies,Actualizar política desde modelo,OCESA,OCESA Oficinas BNN,ISE General,Correcto,Modelo: OCESA | OCESA Oficinas Hipodromo
+,2026-08-31 10:44:11,umartinez@eventossistema.com.mx,Group Policies,Comparar política con modelo,OCESA,OCESA Oficinas BNN,ISE Invitados,Sin cambios,Modelo: OCESA | OCESA Oficinas Hipodromo
+,2026-08-31 10:44:11,umartinez@eventossistema.com.mx,Group Policies,Actualizar política desde modelo,OCESA,OCESA Oficinas BNN,ISE Medios,Correcto,Modelo: OCESA | OCESA Oficinas Hipodromo
+,2026-08-31 10:44:11,umartinez@eventossistema.com.mx,Group Policies,Comparar política con modelo,OCESA,OCESA Oficinas BNN,ISE SAP,Sin cambios,Modelo: OCESA | OCESA Oficinas Hipodromo
+,2026-08-31 10:44:12,umartinez@eventossistema.com.mx,Group Policies,Actualizar política desde modelo,OCESA,OCESA Oficinas Live Events,ISE Admin Directivos,Correcto,Modelo: OCESA | OCESA Oficinas Hipodromo
+,2026-08-31 10:44:12,umartinez@eventossistema.com.mx,Group Policies,Actualizar política desde modelo,OCESA,OCESA Oficinas Live Events,ISE AdServices,Correcto,Modelo: OCESA | OCESA Oficinas Hipodromo
+,2026-08-31 10:44:13,umartinez@eventossistema.com.mx,Group Policies,Actualizar política desde modelo,OCESA,OCESA Oficinas Live Events,ISE General,Correcto,Modelo: OCESA | OCESA Oficinas Hipodromo
+,2026-08-31 10:44:14,umartinez@eventossistema.com.mx,Group Policies,Actualizar política desde modelo,OCESA,OCESA Oficinas Live Events,ISE Invitados,Correcto,Modelo: OCESA | OCESA Oficinas Hipodromo
+,2026-08-31 10:44:14,umartinez@eventossistema.com.mx,Group Policies,Actualizar política desde modelo,OCESA,OCESA Oficinas Live Events,ISE Medios,Correcto,Modelo: OCESA | OCESA Oficinas Hipodromo
+,2026-08-31 10:44:14,umartinez@eventossistema.com.mx,Group Policies,Comparar política con modelo,OCESA,OCESA Oficinas Live Events,ISE SAP,Sin cambios,Modelo: OCESA | OCESA Oficinas Hipodromo
+,2026-08-31 10:44:15,umartinez@eventossistema.com.mx,Group Policies,Actualizar política desde modelo,OCESA,OCESA Oficinas SMO,ISE Admin Directivos,Correcto,Modelo: OCESA | OCESA Oficinas Hipodromo
+,2026-08-31 10:44:15,umartinez@eventossistema.com.mx,Group Policies,Actualizar política desde modelo,OCESA,OCESA Oficinas SMO,ISE AdServices,Correcto,Modelo: OCESA | OCESA Oficinas Hipodromo
+,2026-08-31 10:44:16,umartinez@eventossistema.com.mx,Group Policies,Actualizar política desde modelo,OCESA,OCESA Oficinas SMO,ISE General,Correcto,Modelo: OCESA | OCESA Oficinas Hipodromo
+,2026-08-31 10:44:17,umartinez@eventossistema.com.mx,Group Policies,Actualizar política desde modelo,OCESA,OCESA Oficinas SMO,ISE Invitados,Correcto,Modelo: OCESA | OCESA Oficinas Hipodromo
+,2026-08-31 10:44:17,umartinez@eventossistema.com.mx,Group Policies,Actualizar política desde modelo,OCESA,OCESA Oficinas SMO,ISE Medios,Correcto,Modelo: OCESA | OCESA Oficinas Hipodromo
+,2026-08-31 10:44:17,umartinez@eventossistema.com.mx,Group Policies,Comparar política con modelo,OCESA,OCESA Oficinas SMO,ISE SAP,Sin cambios,Modelo: OCESA | OCESA Oficinas Hipodromo
+,2026-08-31 10:44:18,umartinez@eventossistema.com.mx,Group Policies,Actualizar política desde modelo,OCESA,OCESA Teatro Libanes,ISE Admin Directivos,Correcto,Modelo: OCESA | OCESA Oficinas Hipodromo
+,2026-08-31 10:44:19,umartinez@eventossistema.com.mx,Group Policies,Actualizar política desde modelo,OCESA,OCESA Teatro Libanes,ISE AdServices,Correcto,Modelo: OCESA | OCESA Oficinas Hipodromo
+,2026-08-31 10:44:20,umartinez@eventossistema.com.mx,Group Policies,Actualizar política desde modelo,OCESA,OCESA Teatro Libanes,ISE General,Correcto,Modelo: OCESA | OCESA Oficinas Hipodromo
+,2026-08-31 10:44:20,umartinez@eventossistema.com.mx,Group Policies,Comparar política con modelo,OCESA,OCESA Teatro Libanes,ISE Invitados,Sin cambios,Modelo: OCESA | OCESA Oficinas Hipodromo
+,2026-08-31 10:44:20,umartinez@eventossistema.com.mx,Group Policies,Actualizar política desde modelo,OCESA,OCESA Teatro Libanes,ISE Medios,Correcto,Modelo: OCESA | OCESA Oficinas Hipodromo
+,2026-08-31 10:44:20,umartinez@eventossistema.com.mx,Group Policies,Comparar política con modelo,OCESA,OCESA Teatro Libanes,ISE SAP,Sin cambios,Modelo: OCESA | OCESA Oficinas Hipodromo
+,2026-08-31 10:44:21,umartinez@eventossistema.com.mx,Group Policies,Actualizar política desde modelo,OCESA,OCESA Teatro Metropolitan,ISE Admin Directivos,Correcto,Modelo: OCESA | OCESA Oficinas Hipodromo
+,2026-08-31 10:44:21,umartinez@eventossistema.com.mx,Group Policies,Actualizar política desde modelo,OCESA,OCESA Teatro Metropolitan,ISE AdServices,Correcto,Modelo: OCESA | OCESA Oficinas Hipodromo
+,2026-08-31 10:44:21,umartinez@eventossistema.com.mx,Group Policies,Comparar política con modelo,OCESA,OCESA Teatro Metropolitan,ISE General,Sin cambios,Modelo: OCESA | OCESA Oficinas Hipodromo
+,2026-08-31 10:44:21,umartinez@eventossistema.com.mx,Group Policies,Comparar política con modelo,OCESA,OCESA Teatro Metropolitan,ISE Invitados,Sin cambios,Modelo: OCESA | OCESA Oficinas Hipodromo
+,2026-08-31 10:44:22,umartinez@eventossistema.com.mx,Group Policies,Actualizar política desde modelo,OCESA,OCESA Teatro Metropolitan,ISE Medios,Correcto,Modelo: OCESA | OCESA Oficinas Hipodromo
+,2026-08-31 10:44:22,umartinez@eventossistema.com.mx,Group Policies,Comparar política con modelo,OCESA,OCESA Teatro Metropolitan,ISE SAP,Sin cambios,Modelo: OCESA | OCESA Oficinas Hipodromo
+,2026-09-04 12:05:03,umartinez@eventossistema.com.mx,Sistema,Inicio de sesión,,,,Correcto,
+,2026-09-04 12:05:23,umartinez@eventossistema.com.mx,Búsqueda de clientes,Búsqueda de cliente por MAC,,,a4:f6:e8:5c:fe:52,Correcto,Coincidencias encontradas: 6
+,2026-09-04 12:05:49,umartinez@eventossistema.com.mx,Sistema,Cierre de sesión,,,,Correcto,Salida desde el menú principal
+,2026-09-08 16:40:04,umartinez@eventossistema.com.mx,Sistema,Inicio de sesión,,,,Correcto,
+,2026-09-08 16:42:39,umartinez@eventossistema.com.mx,Búsqueda de clientes,Búsqueda de cliente por IP,,,192.168.1.228,Correcto,Coincidencias encontradas: 1
+,2026-09-08 16:46:17,umartinez@eventossistema.com.mx,Búsqueda de clientes,Búsqueda de cliente por MAC,,,7c:70:db:49:24:83,Correcto,Coincidencias encontradas: 9
+,2026-09-08 16:51:40,umartinez@eventossistema.com.mx,Sistema,Cierre de sesión,,,,Correcto,Salida desde el menú principal
+bc688030-b74c-46b5-b2e9-18825b96543d,2026-09-22 00:04:26,umartinez@eventossistema.com.mx,Sistema,Inicio de sesión,,,,Correcto,
+5ff381b5-a41f-4585-8bdd-19d137cbde47,2026-09-22 00:26:40,umartinez@eventossistema.com.mx,Sistema,Cierre de sesión,,,,Correcto,Cierre directo de la consola
+af65413b-c1e4-490b-a6ae-c86b49e9d46a,2026-09-23 18:30:00,umartinez@eventossistema.com.mx,Sistema,Inicio de sesión,,,,Correcto,
