@@ -25,3 +25,9 @@ N3w0c3s4.2026@
 
 SAS
 https://stmerakitools.blob.core.windows.net/merakitools-auditoria/auditoria.dat?si=meraki-auditoria-dat&spr=https&sv=2026-02-06&sr=b&sig=gwlPz73P%2FaGH%2BLsrGM1moBhoPEuDsgWl%2B9MK4zVH9ko%3D
+
+keyring.set_password(
+    "MerakiTools_Auditoria",
+    "azure_sas",
+    "https://stmerakitools.blob.core.windows.net/merakitools-auditoria/auditoria.dat?si=meraki-auditoria-dat&spr=https&sv=2026-02-06&sr=b&sig=gwlPz73P%2FaGH%2BLsrGM1moBhoPEuDsgWl%2B9MK4zVH9ko%3D"
+)
