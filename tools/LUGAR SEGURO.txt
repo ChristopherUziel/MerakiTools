@@ -1,0 +1,11 @@
+"api_key": "d4443b527c8089512d12621a472cc3b1153e7718",
+
+fernet:
+fycsSvifTNLKZrq_eKoSDOGvNvnwsPyEhMsY78c5nVI=
+pas exportacion:
+{"salt": "JmRuup4uTfe7RslZ6k8Uhw==", "hash": "xEUBkoWNtj/5+TyOkqrW9VDWa+6/AV3ziym2JKdsxRc="}
+// N3w0c3s4.2026@
+
+
+SAS
+https://stmerakitools.blob.core.windows.net/merakitools-auditoria/auditoria.dat?si=meraki-auditoria-dat&spr=https&sv=2026-02-06&sr=b&sig=gwlPz73P%2FaGH%2BLsrGM1moBhoPEuDsgWl%2B9MK4zVH9ko%3D

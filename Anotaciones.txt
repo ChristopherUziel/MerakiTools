@@ -11,23 +11,9 @@ Q2HP-7FKV-HNXP
 
 Q2HP-HTLT-7Y4N
 
-correccion con pistola
+correccion con pistola (revisar si ya)
 Q2MD'YG9N'F6XS
 
 
-
-fycsSvifTNLKZrq_eKoSDOGvNvnwsPyEhMsY78c5nVI=
-
-
-{"salt": "JmRuup4uTfe7RslZ6k8Uhw==", "hash": "xEUBkoWNtj/5+TyOkqrW9VDWa+6/AV3ziym2JKdsxRc="}
-
-N3w0c3s4.2026@
-
 SAS
 https://stmerakitools.blob.core.windows.net/merakitools-auditoria/auditoria.dat?si=meraki-auditoria-dat&spr=https&sv=2026-02-06&sr=b&sig=gwlPz73P%2FaGH%2BLsrGM1moBhoPEuDsgWl%2B9MK4zVH9ko%3D
-
-keyring.set_password(
-    "MerakiTools_Auditoria",
-    "azure_sas",
-    "https://stmerakitools.blob.core.windows.net/merakitools-auditoria/auditoria.dat?si=meraki-auditoria-dat&spr=https&sv=2026-02-06&sr=b&sig=gwlPz73P%2FaGH%2BLsrGM1moBhoPEuDsgWl%2B9MK4zVH9ko%3D"
-)
