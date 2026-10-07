@@ -7,6 +7,7 @@ import json
 import os
 import secrets
 from datetime import datetime
+from getpass import getpass
 
 import uuid
 
@@ -347,6 +348,73 @@ def preparar_control_cierre() -> None:
     )
 
 
+def asegurar_configuracion_sas_azure() -> bool:
+    """
+    Comprueba si el SAS de Azure ya está guardado
+
+    Si no existe, valida el ingresado y lo guarda en credenciales
+    """
+    try:
+        sas_guardado = keyring.get_password(
+            SERVICIO_AUDITORIA,
+            USUARIO_SAS_AZURE,
+        )
+    except Exception:
+        print("\nNo fue posible consultar la " "configuración de Azure.")
+        print("MerakiTools continuará con " "auditoría local.\n")
+        return False
+
+    if sas_guardado:
+        return True
+
+    print("\nEl acceso a la auditoría central " "de Azure no está configurado.")
+
+    sas_url = getpass("Pega el SAS URL proporcionado: ").strip()
+
+    if not sas_url:
+        print("\nNo se ingresó un SAS.")
+        print("MerakiTools continuará con " "auditoría local.\n")
+        return False
+
+    try:
+        cliente = BlobClient.from_blob_url(sas_url)
+
+        propiedades = cliente.get_blob_properties()
+
+        if str(propiedades.blob_type).lower() not in (
+            "appendblob",
+            "blobtype.appendblob",
+        ):
+            print("\nEl SAS no apunta a un " "Append Blob.")
+            print("El SAS no fue guardado.\n")
+            return False
+
+        keyring.set_password(
+            SERVICIO_AUDITORIA,
+            USUARIO_SAS_AZURE,
+            sas_url,
+        )
+
+        sas_verificacion = keyring.get_password(
+            SERVICIO_AUDITORIA,
+            USUARIO_SAS_AZURE,
+        )
+
+        if sas_verificacion != sas_url:
+            raise RuntimeError("El SAS no pudo guardarse " "correctamente.")
+
+    except Exception as error:
+        print("\nNo fue posible validar el acceso " "a la auditoría central de Azure.")
+        print(f"Detalle: " f"{type(error).__name__}: {error}")
+        print("El SAS no fue guardado.")
+        print("MerakiTools continuará con " "auditoría local.\n")
+        return False
+
+    print("\nAcceso a la auditoría central " "configurado correctamente.\n")
+
+    return True
+
+
 def obtener_cliente_auditoria_azure() -> BlobClient:
     """
     Obtiene el cliente para el Append Blob central de auditoría.
@@ -398,7 +466,6 @@ def guardar_auditoria_pendiente(
 
     with ARCHIVO_PENDIENTES.open("ab") as archivo:
         archivo.write(registro_cifrado + b"\n")
-
 
 
 def sincronizar_auditoria_pendiente() -> tuple[int, int]:
@@ -508,12 +575,12 @@ def registrar_auditoria(
     with ARCHIVO_AUDITORIA.open("ab") as archivo:
         archivo.write(registro_cifrado + b"\n")
 
-    #Enviado a azure
+    # Enviado a azure
     enviado_azure = enviar_auditoria_azure(
         registro_cifrado,
     )
 
-    #Si falla manda a pendientes
+    # Si falla manda a pendientes
     if not enviado_azure:
         guardar_auditoria_pendiente(
             registro_cifrado,
@@ -595,14 +662,10 @@ def leer_auditoria_central() -> tuple[list[dict], int]:
 
         try:
             contenido = cifrador.decrypt(linea)
-            registro = json.loads(
-                contenido.decode("utf-8")
-            )
+            registro = json.loads(contenido.decode("utf-8"))
 
             if not isinstance(registro, dict):
-                raise ValueError(
-                    "El registro descifrado no es un objeto."
-                )
+                raise ValueError("El registro descifrado no es un objeto.")
 
             registros.append(registro)
 
@@ -629,7 +692,6 @@ def leer_auditoria_central() -> tuple[list[dict], int]:
             )
 
     return registros, registros_con_error
-
 
 
 def exportar_auditoria_csv() -> str:
@@ -690,29 +752,19 @@ def exportar_auditoria_central_csv() -> tuple[str, int]:
         ruta del archivo CSV.
         cantidad de registros con error.
     """
-    registros, registros_con_error = (
-        leer_auditoria_central()
-    )
+    registros, registros_con_error = leer_auditoria_central()
 
     if not registros:
-        raise ValueError(
-            "No existen registros de auditoría "
-            "central para exportar."
-        )
+        raise ValueError("No existen registros de auditoría " "central para exportar.")
 
     CARPETA_EXPORTACIONES.mkdir(
         parents=True,
         exist_ok=True,
     )
 
-    fecha = datetime.now().strftime(
-        "%Y%m%d_%H%M%S"
-    )
+    fecha = datetime.now().strftime("%Y%m%d_%H%M%S")
 
-    archivo_salida = (
-        CARPETA_EXPORTACIONES
-        / f"auditoria_central_{fecha}.csv"
-    )
+    archivo_salida = CARPETA_EXPORTACIONES / f"auditoria_central_{fecha}.csv"
 
     columnas = [
         "id_registro",

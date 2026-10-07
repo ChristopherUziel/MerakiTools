@@ -36,6 +36,7 @@ from auditoria import (
     registrar_cierre_sesion,
     asegurar_configuracion_auditoria,
     sincronizar_auditoria_pendiente,
+    asegurar_configuracion_sas_azure,
 )
 
 from modules.auditoria_menu import(
@@ -81,6 +82,7 @@ def main():
 
     try:
         asegurar_configuracion_auditoria()
+        asegurar_configuracion_sas_azure()
 
         enviados, pendientes = (
             sincronizar_auditoria_pendiente()
