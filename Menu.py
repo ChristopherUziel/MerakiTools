@@ -35,6 +35,7 @@ from auditoria import (
     preparar_control_cierre,
     registrar_cierre_sesion,
     asegurar_configuracion_auditoria,
+    sincronizar_auditoria_pendiente,
 )
 
 from modules.auditoria_menu import(
@@ -80,6 +81,16 @@ def main():
 
     try:
         asegurar_configuracion_auditoria()
+
+        enviados, pendientes = (
+            sincronizar_auditoria_pendiente()
+        )
+
+        if enviados > 0 or pendientes > 0:
+            print("\nSincronización de auditoría:")
+            print(f"Enviados a Azure: {enviados}")
+            print(f"Pendientes: {pendientes}")
+            
 
         configurar_api_key_si_es_necesario()
         inicializar()

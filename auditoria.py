@@ -11,6 +11,7 @@ from datetime import datetime
 import uuid
 
 import keyring
+from azure.storage.blob import BlobClient  ###Import azure
 from cryptography.fernet import Fernet
 
 from config import CARPETA_BASE
@@ -24,6 +25,9 @@ ARCHIVO_PENDIENTES = CARPETA_AUDITORIA / "pendientes.dat"
 
 SERVICIO_AUDITORIA = "MerakiTools_Auditoria"
 USUARIO_CLAVE_CIFRADO = "clave_cifrado"
+
+######## USUARIO SAS AZURE
+USUARIO_SAS_AZURE = "azure_sas"
 
 ##### clave para ezportacion
 USUARIO_PASSWORD_EXPORTACION = "password_exportacion"
@@ -343,6 +347,116 @@ def preparar_control_cierre() -> None:
     )
 
 
+def obtener_cliente_auditoria_azure() -> BlobClient:
+    """
+    Obtiene el cliente para el Append Blob central de auditoría.
+    """
+
+    sas_url = keyring.get_password(
+        SERVICIO_AUDITORIA,
+        USUARIO_SAS_AZURE,
+    )
+
+    if not sas_url:
+        raise RuntimeError("El acceso de auditoría a Azure no está configurado.")
+
+    return BlobClient.from_blob_url(sas_url)
+
+
+def enviar_auditoria_azure(
+    registro_cifrado: bytes,
+) -> bool:
+    """
+    Intenta enviar un registro cifrado al Append Blob central.
+
+    Devuelve True si Azure confirmó el append.
+    Devuelve False si no fue posible enviarlo.
+    """
+
+    try:
+        cliente = obtener_cliente_auditoria_azure()
+
+        cliente.append_block(registro_cifrado + b"\n")
+
+        return True
+
+    except Exception:
+        return False
+
+
+def guardar_auditoria_pendiente(
+    registro_cifrado: bytes,
+) -> None:
+    """
+    Guarda un registro cifrado en pendientes.dat que no pudo
+    confirmarse en central azure
+    """
+    CARPETA_AUDITORIA.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+
+    with ARCHIVO_PENDIENTES.open("ab") as archivo:
+        archivo.write(registro_cifrado + b"\n")
+
+
+
+def sincronizar_auditoria_pendiente() -> tuple[int, int]:
+    """
+    Intenta enviar a Azure los registros de pendientes.dat
+
+    Devuelve:
+        enviados y pendientes que no pudieron enviarse.
+    """
+    if not ARCHIVO_PENDIENTES.exists():
+        return 0, 0
+
+    registros_pendientes = []
+
+    with ARCHIVO_PENDIENTES.open("rb") as archivo:
+        for linea in archivo:
+            registro_cifrado = linea.strip()
+
+            if registro_cifrado:
+                registros_pendientes.append(
+                    registro_cifrado,
+                )
+
+    if not registros_pendientes:
+        return 0, 0
+
+    registros_no_enviados = []
+    enviados = 0
+
+    for registro_cifrado in registros_pendientes:
+        enviado = enviar_auditoria_azure(
+            registro_cifrado,
+        )
+
+        if enviado:
+            enviados += 1
+        else:
+            registros_no_enviados.append(
+                registro_cifrado,
+            )
+
+    archivo_temporal = ARCHIVO_PENDIENTES.with_suffix(
+        ".tmp",
+    )
+
+    with archivo_temporal.open("wb") as archivo:
+        for registro_cifrado in registros_no_enviados:
+            archivo.write(
+                registro_cifrado + b"\n",
+            )
+
+    archivo_temporal.replace(
+        ARCHIVO_PENDIENTES,
+    )
+
+    return enviados, len(registros_no_enviados)
+
+
 def registrar_auditoria(
     modulo: str,
     accion: str,
@@ -393,6 +507,17 @@ def registrar_auditoria(
     # Agrega el registro como una nueva linea
     with ARCHIVO_AUDITORIA.open("ab") as archivo:
         archivo.write(registro_cifrado + b"\n")
+
+    #Enviado a azure
+    enviado_azure = enviar_auditoria_azure(
+        registro_cifrado,
+    )
+
+    #Si falla manda a pendientes
+    if not enviado_azure:
+        guardar_auditoria_pendiente(
+            registro_cifrado,
+        )
 
 
 def leer_auditoria() -> list[dict]:
