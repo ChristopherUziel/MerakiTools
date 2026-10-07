@@ -562,6 +562,76 @@ def leer_auditoria() -> list[dict]:
     return registros
 
 
+def leer_auditoria_central() -> tuple[list[dict], int]:
+    """
+    Descarga la auditoría central en memoria y
+    descifra sus registros
+
+    Las líneas que no puedan descifrarse se incluyen
+    como registros de error para no cancelar toda
+    la exportación
+    """
+    cliente = obtener_cliente_auditoria_azure()
+
+    contenido_blob = cliente.download_blob().readall()
+
+    if not contenido_blob:
+        return [], 0
+
+    clave = obtener_clave_cifrado()
+    cifrador = Fernet(clave)
+
+    registros = []
+    registros_con_error = 0
+
+    for numero_linea, linea in enumerate(
+        contenido_blob.splitlines(),
+        start=1,
+    ):
+        linea = linea.strip()
+
+        if not linea:
+            continue
+
+        try:
+            contenido = cifrador.decrypt(linea)
+            registro = json.loads(
+                contenido.decode("utf-8")
+            )
+
+            if not isinstance(registro, dict):
+                raise ValueError(
+                    "El registro descifrado no es un objeto."
+                )
+
+            registros.append(registro)
+
+        except Exception:
+            registros_con_error += 1
+
+            registros.append(
+                {
+                    "id_registro": "",
+                    "fecha_hora": "",
+                    "usuario": "",
+                    "modulo": "Auditoría central",
+                    "accion": "Lectura de registro",
+                    "organizacion": "",
+                    "network": "",
+                    "objetivo": f"Línea {numero_linea}",
+                    "resultado": "ERROR DE LECTURA",
+                    "detalle": (
+                        "No fue posible descifrar el "
+                        "registro central número "
+                        f"{numero_linea}."
+                    ),
+                }
+            )
+
+    return registros, registros_con_error
+
+
+
 def exportar_auditoria_csv() -> str:
     """
     Descifra auditoria.dat y genera una copia en csv
@@ -609,6 +679,69 @@ def exportar_auditoria_csv() -> str:
         escritor.writerows(registros)
 
     return str(archivo_salida)
+
+
+def exportar_auditoria_central_csv() -> tuple[str, int]:
+    """
+    Descarga la auditoría central en memoria,
+    la descifra y genera un archivo CSV local.
+
+    Devuelve:
+        ruta del archivo CSV.
+        cantidad de registros con error.
+    """
+    registros, registros_con_error = (
+        leer_auditoria_central()
+    )
+
+    if not registros:
+        raise ValueError(
+            "No existen registros de auditoría "
+            "central para exportar."
+        )
+
+    CARPETA_EXPORTACIONES.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+
+    fecha = datetime.now().strftime(
+        "%Y%m%d_%H%M%S"
+    )
+
+    archivo_salida = (
+        CARPETA_EXPORTACIONES
+        / f"auditoria_central_{fecha}.csv"
+    )
+
+    columnas = [
+        "id_registro",
+        "fecha_hora",
+        "usuario",
+        "modulo",
+        "accion",
+        "organizacion",
+        "network",
+        "objetivo",
+        "resultado",
+        "detalle",
+    ]
+
+    with archivo_salida.open(
+        "w",
+        newline="",
+        encoding="utf-8-sig",
+    ) as archivo:
+        escritor = csv.DictWriter(
+            archivo,
+            fieldnames=columnas,
+            extrasaction="ignore",
+        )
+
+        escritor.writeheader()
+        escritor.writerows(registros)
+
+    return str(archivo_salida), registros_con_error
 
 
 def vaciar_auditoria() -> None:

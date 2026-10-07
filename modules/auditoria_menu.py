@@ -2,6 +2,7 @@ from getpass import getpass
 
 from auditoria import (
     exportar_auditoria_csv,
+    exportar_auditoria_central_csv,
     password_exportacion_configurado,
     validar_password_exportacion,
     vaciar_auditoria,
@@ -37,17 +38,44 @@ def menu_auditoria() -> None:
     print(" ADMINISTRACIÓN DE AUDITORÍA")
     print("=" * 50)
 
-    print("\n1. Exportar auditoría a CSV")
-    print("2. Exportar y vaciar auditoría")
+    print("\n1. Exportar auditoría local a CSV")
+    print("2. Exportar y vaciar auditoría local")
+    print("3. Exportar auditoria central a CSV")
     print("0. Volver al menú principal")
 
     opcion = input_menu("\nSelecciona una opción:\n> ")
 
-    if opcion not in ("1", "2"):
+    if opcion not in ("1", "2", "3"):
         print("\nOpción no válida.\n")
         return
 
     if not solicitar_password_auditoria():
+        return
+
+    if opcion == "3":
+        try:
+            archivo, registros_con_error = exportar_auditoria_central_csv()
+
+        except ValueError as error:
+            print("\nNo fue posible exportar " f"la auditoría central: {error}\n")
+            return
+
+        except Exception as error:
+            print("\nNo fue posible descargar o " "exportar la auditoría central.")
+            print(f"Detalle: " f"{type(error).__name__}: {error}\n")
+            return
+
+        print("\n✓ Auditoría central exportada " "correctamente.")
+        print(f"Archivo:\n{archivo}\n")
+
+        if registros_con_error > 0:
+            print(
+                "⚠ La exportación contiene "
+                f"{registros_con_error} registro(s) "
+                "que no pudieron descifrarse."
+            )
+            print("Los registros afectados fueron " "marcados dentro del CSV.\n")
+
         return
 
     try:
