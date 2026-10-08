@@ -1,6 +1,9 @@
 name: Compilar MerakiTools para macOS
 
 on:
+  push:
+    branches:
+      - version-mac
   workflow_dispatch:
 
 jobs:
